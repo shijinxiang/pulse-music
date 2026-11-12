@@ -1,0 +1,19 @@
+# PULSE 音乐网站
+
+当前展示第二版，也就是 impeccable 优化后的电光绿、金属耳机界面。
+
+[打开音乐网站](https://shijinxiang.github.io/pulse-music/)
+
+- 播放四首原创合成电子音乐，支持切歌、进度控制、音量调节、随机和循环。
+- 按风格筛选、搜索和收藏曲目，也能导入本地音频。
+- 使用 A、S、D、F、G、H 弹奏六个琴键，体验音符粒子和沉浸声场。
+
+页面使用 HTML、CSS 和 JavaScript，字体与图片随仓库提供。字体许可证保留在 `assets/fonts/`。
+
+本地预览可在仓库目录运行以下命令，然后打开浏览器显示的本地地址。
+
+```sh
+python -m http.server 8080
+```
+
+GitHub Pages 从 `main` 分支的根目录发布。
