@@ -696,26 +696,11 @@ function resizeCanvas() {
   context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   scene.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   visualizer.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-  const art = $(".hero-art").getBoundingClientRect();
-  const sidebarWidth =
-    width > 760
-      ? parseFloat(
-          getComputedStyle(document.documentElement).getPropertyValue(
-            "--sidebar",
-          ),
-        )
-      : 0;
-  const availableWidth = width - sidebarWidth;
+  const desktop = width > 760;
   backgroundRing = {
-    x: art.width ? art.x + art.width / 2 : sidebarWidth + availableWidth * 0.65,
-    y: art.height
-      ? Math.min(art.y + window.scrollY + art.height / 2, height * 0.62)
-      : height * 0.44,
-    radius: Math.min(
-      availableWidth * (width <= 760 ? 0.36 : 0.235),
-      height * 0.32,
-      260,
-    ),
+    x: width * (desktop ? 2 / 3 : 0.5),
+    y: height * 0.5,
+    radius: width * (desktop ? 1 / 3 : 0.42),
   };
   resizeHeroWaveform();
   if ($("#immersive").open) {

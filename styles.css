@@ -443,7 +443,7 @@ main {
   object-fit: contain;
   object-position: center;
   border-radius: inherit;
-  mix-blend-mode: screen;
+  mix-blend-mode: lighten;
   transition: transform 700ms var(--ease);
 }
 .hero-art-shade {
