@@ -90,7 +90,8 @@ const state = {
   ),
   shuffle: false,
   repeat: false,
-  effects: Boolean(readPreference("pulse-effects", !motionPreference.matches)),
+  effects:
+    !motionPreference.matches && Boolean(readPreference("pulse-effects", true)),
   lastVolume: 0.65,
   seeking: false,
 };
@@ -157,7 +158,7 @@ function renderTracks() {
         <span class="cover-play" aria-hidden="true">${icon("play")}</span>
       </div>
       <div class="track-info-row"><h3 class="track-name"><button class="track-title-button" data-play="${track.id}">${escapeText(track.title)}</button></h3><button class="icon-button like-button" data-like="${track.id}" aria-label="${liked ? "取消收藏" : "收藏"} ${escapeText(track.title)}" aria-pressed="${liked}">${icon("heart")}</button></div>
-      <div class="track-meta"><span class="track-meta-left"><span>${escapeText(track.style)}</span><span class="track-meta-dot"></span><span>${escapeText(track.mood)}</span></span><span class="track-bpm">${track.local ? formatTime(track.duration) : `${track.bpm} BPM`}</span></div>
+      <div class="track-meta"><span class="track-meta-left">${escapeText(track.style)}</span><span class="track-bpm">${track.local ? formatTime(track.duration) : `${track.bpm} BPM`}</span></div>
     </article>`;
     })
     .join("");
@@ -257,14 +258,12 @@ function setView(view, collection = null) {
 function updateTrackInfo() {
   const track = currentTrack();
   $("#player-title").textContent = track.title;
-  $("#player-artist").textContent =
-    `${track.local ? "LOCAL MUSIC" : "PULSE ORIGINAL"} · ${track.style}`;
+  $("#player-artist").textContent = track.style;
   $("#player-art").className = `player-art album-art art-${track.art}`;
   $("#immersive-title").textContent = track.title;
-  $("#immersive-style").textContent =
-    `${track.local ? "LOCAL MUSIC" : "PULSE ORIGINAL"} · ${track.style}`;
+  $("#immersive-style").textContent = track.style;
   $("#immersive-bpm").textContent = track.local
-    ? "YOUR FREQUENCY"
+    ? formatTime(track.duration)
     : `${track.bpm} BPM`;
   $("#duration").textContent = formatTime(track.duration);
   updateLikes();
@@ -279,9 +278,6 @@ function updatePlayback() {
   });
   $("#hero-play").innerHTML =
     `${icon(audio.playing ? "pause" : "play")}<span>${audio.playing ? "暂停音乐" : "即刻开听"}</span>`;
-  $("#hero-status").textContent = audio.playing
-    ? `正在共振 · ${currentTrack().title}`
-    : "声音就绪，等你按下播放";
   updateCardPlayback();
   renderQueue();
 }
@@ -502,12 +498,19 @@ function updateEffects() {
   if (!state.effects) {
     particles.length = 0;
     rings.length = 0;
+    trailPointer = null;
     $("#hero-image").style.transform = "";
+    $(".sound-orb").style.setProperty("--orb-scale", 1);
   }
 }
 $("#effects-toggle").addEventListener("click", () => {
   state.effects = !state.effects;
   savePreference("pulse-effects", state.effects);
+  updateEffects();
+});
+motionPreference.addEventListener("change", (event) => {
+  if (!event.matches) return;
+  state.effects = false;
   updateEffects();
 });
 $("#reverb-toggle").addEventListener("click", () => {
@@ -645,6 +648,8 @@ $("#file-input").addEventListener("change", async (event) => {
 
 const canvas = $("#particles");
 const context = canvas.getContext("2d");
+const visualizerCanvas = $("#music-visualizer");
+const visualizer = visualizerCanvas.getContext("2d");
 const sceneCanvas = $("#soundscape");
 const scene = sceneCanvas.getContext("2d");
 const heroWaveCanvas = $("#hero-waveform");
@@ -655,6 +660,17 @@ let heroVisible = true;
 const particles = [];
 const rings = [];
 const notes = ["♪", "♫", "♬", "♩"];
+const noteColors = [
+  "#ff647e",
+  "#ffae57",
+  "#ffe46b",
+  "#b9ff65",
+  "#62eadd",
+  "#77afff",
+  "#d99aff",
+];
+let trailPointer = null;
+let trailColor = 0;
 const starfield = Array.from({ length: 85 }, () => ({
   x: Math.random(),
   y: Math.random(),
@@ -667,17 +683,40 @@ let pixelRatio = Math.min(window.devicePixelRatio || 1, 1.75);
 let orb = { x: width / 2, y: height * 0.38 };
 let pointerDown = false;
 let lastPointerNote = 0;
+let backgroundRing = { x: 0, y: 0, radius: 0 };
 
 function resizeCanvas() {
   width = window.innerWidth;
   height = window.innerHeight;
   pixelRatio = Math.min(window.devicePixelRatio || 1, 1.75);
-  [canvas, sceneCanvas].forEach((element) => {
+  [canvas, sceneCanvas, visualizerCanvas].forEach((element) => {
     element.width = Math.floor(width * pixelRatio);
     element.height = Math.floor(height * pixelRatio);
   });
   context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   scene.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+  visualizer.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+  const art = $(".hero-art").getBoundingClientRect();
+  const sidebarWidth =
+    width > 760
+      ? parseFloat(
+          getComputedStyle(document.documentElement).getPropertyValue(
+            "--sidebar",
+          ),
+        )
+      : 0;
+  const availableWidth = width - sidebarWidth;
+  backgroundRing = {
+    x: art.width ? art.x + art.width / 2 : sidebarWidth + availableWidth * 0.65,
+    y: art.height
+      ? Math.min(art.y + window.scrollY + art.height / 2, height * 0.62)
+      : height * 0.44,
+    radius: Math.min(
+      availableWidth * (width <= 760 ? 0.36 : 0.235),
+      height * 0.32,
+      260,
+    ),
+  };
   resizeHeroWaveform();
   if ($("#immersive").open) {
     const rectangle = $(".sound-orb").getBoundingClientRect();
@@ -688,6 +727,7 @@ function resizeCanvas() {
   }
 }
 window.addEventListener("resize", resizeCanvas);
+document.fonts.ready.then(resizeCanvas);
 
 function resizeHeroWaveform() {
   const rectangle = heroWaveCanvas.getBoundingClientRect();
@@ -733,23 +773,74 @@ function burst(x, y, intensity = 1, color = "#ceff57") {
     const isNote = index < Math.ceil(intensity * 3);
     const angle = Math.random() * Math.PI * 2;
     const speed = Math.random() * 2.5 + 0.8;
+    const lifetime = isNote ? 850 : 450;
     particles.push({
       x,
       y,
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed - 2,
       life: 1,
-      decay: isNote ? 0.009 : 0.022,
+      lifetime,
+      expiresAt: performance.now() + lifetime,
       size: isNote ? 17 + Math.random() * 14 : 1 + Math.random() * 2,
       note: isNote ? notes[Math.floor(Math.random() * notes.length)] : "",
       rotation: Math.random() * 0.6 - 0.3,
-      color,
+      color: isNote ? noteColors[trailColor++ % noteColors.length] : color,
     });
   }
   rings.push({ x, y, radius: 4, life: 1, color });
   if (particles.length > 240) particles.splice(0, particles.length - 240);
   if (rings.length > 16) rings.shift();
 }
+
+document.addEventListener(
+  "pointermove",
+  (event) => {
+    if (!state.effects || event.pointerType === "touch") return;
+    const now = performance.now();
+    const previous = trailPointer;
+    const distance = previous
+      ? Math.hypot(event.clientX - previous.x, event.clientY - previous.y)
+      : 20;
+    if (previous && distance < 10) return;
+    if (previous && now - previous.time < 14) return;
+    const continuous = previous && now - previous.time < 90;
+    const count = continuous
+      ? Math.min(5, Math.max(1, Math.floor(distance / 18)))
+      : 1;
+    for (let index = 1; index <= count; index += 1) {
+      const fraction = index / count;
+      const color = noteColors[trailColor++ % noteColors.length];
+      particles.push({
+        x: continuous
+          ? previous.x + (event.clientX - previous.x) * fraction
+          : event.clientX,
+        y: continuous
+          ? previous.y + (event.clientY - previous.y) * fraction
+          : event.clientY,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: -0.7 - Math.random() * 0.5,
+        life: 1,
+        lifetime: 300,
+        expiresAt: now + 300,
+        size: 20 + Math.min(distance * 0.08, 12),
+        note: notes[trailColor % notes.length],
+        rotation: (Math.random() - 0.5) * 0.6,
+        color,
+      });
+    }
+    trailPointer = { x: event.clientX, y: event.clientY, time: now };
+    if (particles.length > 240) particles.splice(0, particles.length - 240);
+  },
+  { passive: true },
+);
+
+window.addEventListener("blur", () => {
+  trailPointer = null;
+});
+document.addEventListener("pointerleave", () => {
+  trailPointer = null;
+});
 
 function drawParticles(target) {
   target.save();
@@ -864,34 +955,67 @@ function drawSoundscape(time, levels) {
     scene.arc(x, y, star.size, 0, Math.PI * 2);
     scene.fill();
   }
-  const radius = width < 700 ? 127 : 149;
-  for (let index = 0; index < 90; index += 1) {
-    const angle = (index / 90) * Math.PI * 2 - Math.PI / 2;
-    const bin = levels.bins
-      ? levels.bins[Math.min(90, Math.floor((index % 45) * 1.4))] / 255
-      : 0;
-    const length = state.effects ? 3 + bin * 55 : 3;
-    scene.strokeStyle = `rgba(206,255,87,${0.15 + bin * 0.6})`;
-    scene.lineWidth = 2;
-    scene.beginPath();
-    scene.moveTo(
-      orb.x + Math.cos(angle) * radius,
-      orb.y + Math.sin(angle) * radius,
-    );
-    scene.lineTo(
-      orb.x + Math.cos(angle) * (radius + length),
-      orb.y + Math.sin(angle) * (radius + length),
-    );
-    scene.stroke();
-  }
+  drawFrequencyRing(scene, orb.x, orb.y, width < 700 ? 127 : 149, levels);
   if (state.effects)
     $(".sound-orb").style.setProperty("--orb-scale", 1 + levels.bass * 0.075);
   drawParticles(scene);
 }
 
+function drawFrequencyRing(target, x, y, radius, levels) {
+  const energy = state.effects ? levels.energy : 0;
+  const bass = state.effects ? levels.bass : 0;
+  const innerRadius = radius + bass * 7;
+  target.save();
+  const glow = target.createRadialGradient(
+    x,
+    y,
+    radius * 0.55,
+    x,
+    y,
+    radius * 1.4,
+  );
+  glow.addColorStop(0, "rgba(139,207,65,0)");
+  glow.addColorStop(0.65, `rgba(153,225,66,${0.018 + energy * 0.045})`);
+  glow.addColorStop(1, "rgba(139,207,65,0)");
+  target.fillStyle = glow;
+  target.fillRect(
+    x - radius * 1.4,
+    y - radius * 1.4,
+    radius * 2.8,
+    radius * 2.8,
+  );
+  target.lineWidth = 1;
+  target.strokeStyle = `rgba(190,239,122,${0.1 + energy * 0.13})`;
+  target.beginPath();
+  target.arc(x, y, innerRadius - 12, 0, Math.PI * 2);
+  target.stroke();
+  target.strokeStyle = `rgba(198,249,139,${0.15 + energy * 0.22})`;
+  target.beginPath();
+  target.arc(x, y, innerRadius, 0, Math.PI * 2);
+  target.stroke();
+  const count = levels.bands.length * 4;
+  target.lineWidth = width <= 760 ? 1.8 : 2.4;
+  target.lineCap = "round";
+  for (let index = 0; index < count; index += 1) {
+    const mirroredIndex = index < count / 2 ? index : count - 1 - index;
+    const bandIndex = Math.floor(mirroredIndex / 2);
+    const amplitude = state.effects ? levels.bands[bandIndex] : 0;
+    const angle = (index / count) * Math.PI * 2 - Math.PI / 2;
+    const cosine = Math.cos(angle);
+    const sine = Math.sin(angle);
+    const start = innerRadius + 7;
+    const length = 2 + Math.pow(amplitude, 1.4) * radius * 0.3;
+    target.strokeStyle = `hsla(${82 + bandIndex * 1.5},85%,72%,${0.18 + amplitude * 0.68})`;
+    target.beginPath();
+    target.moveTo(x + cosine * start, y + sine * start);
+    target.lineTo(x + cosine * (start + length), y + sine * (start + length));
+    target.stroke();
+  }
+  target.restore();
+}
+
 let previousFrame = performance.now();
 let lastUiFrame = 0;
-let lastBeatNote = 0;
 function animate(time) {
   const delta = Math.min((time - previousFrame) / 16.67, 2);
   previousFrame = time;
@@ -901,7 +1025,10 @@ function animate(time) {
     particle.x += particle.vx * delta;
     particle.y += particle.vy * delta;
     particle.vy += 0.018 * delta;
-    particle.life -= particle.decay * delta;
+    particle.life = Math.min(
+      1,
+      Math.max(0, (particle.expiresAt - time) / particle.lifetime),
+    );
     particle.rotation += 0.003 * delta;
     if (particle.life <= 0) particles.splice(index, 1);
   }
@@ -912,28 +1039,16 @@ function animate(time) {
   }
   drawParticles(context);
   const levels = audio.getLevels();
+  visualizer.clearRect(0, 0, width, height);
+  drawFrequencyRing(
+    visualizer,
+    backgroundRing.x,
+    backgroundRing.y,
+    backgroundRing.radius,
+    levels,
+  );
   drawHeroWaveform(levels);
   if ($("#immersive").open) drawSoundscape(time, levels);
-  if (
-    state.effects &&
-    audio.playing &&
-    levels.bass > 0.35 &&
-    time - lastBeatNote > 650
-  ) {
-    lastBeatNote = time;
-    if ($("#immersive").open) {
-      const angle = Math.random() * Math.PI * 2;
-      burst(orb.x + Math.cos(angle) * 150, orb.y + Math.sin(angle) * 150, 0.4);
-    } else {
-      const hero = $("#hero").getBoundingClientRect();
-      if (hero.bottom > 0 && hero.top < height)
-        burst(
-          hero.right - hero.width * (0.15 + Math.random() * 0.3),
-          hero.top + hero.height * (0.3 + Math.random() * 0.5),
-          0.35,
-        );
-    }
-  }
   if (time - lastUiFrame > 90) {
     lastUiFrame = time;
     if (!state.seeking) {
@@ -948,8 +1063,7 @@ function animate(time) {
       );
     }
     $$("#player-spectrum i").forEach((bar, index) => {
-      const energy =
-        state.effects && levels.bins ? levels.bins[index * 2 + 1] / 255 : 0;
+      const energy = state.effects ? levels.bands[index * 4] : 0;
       bar.style.height = `${3 + energy * 18}px`;
     });
   }

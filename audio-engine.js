@@ -10,6 +10,16 @@ class PulseAudio {
     this.operation = 0;
     this.timer = null;
     this.reverbEnabled = true;
+    this.visualBands = new Float32Array(48);
+    this.levels = {
+      bass: 0,
+      energy: 0,
+      rms: 0,
+      bands: this.visualBands,
+      bins: null,
+      waveform: null,
+    };
+    this.resetAnalysis();
     this.onEnded = () => {};
     this.onError = () => {};
     this.onMetadata = () => {};
@@ -46,10 +56,27 @@ class PulseAudio {
       this.compressor.knee.value = 18;
       this.compressor.ratio.value = 4;
       this.analyser = this.context.createAnalyser();
-      this.analyser.fftSize = 256;
-      this.analyser.smoothingTimeConstant = 0.82;
+      this.analyser.fftSize = 2048;
+      this.analyser.smoothingTimeConstant = 0.55;
       this.frequencyData = new Uint8Array(this.analyser.frequencyBinCount);
       this.waveformData = new Uint8Array(this.analyser.fftSize);
+      this.frequencyDb = new Float32Array(this.analyser.frequencyBinCount);
+      this.timeData = new Float32Array(this.analyser.fftSize);
+      this.levels.bins = this.frequencyData;
+      this.levels.waveform = this.waveformData;
+      const binHz = this.context.sampleRate / this.analyser.fftSize;
+      const maxHz = Math.min(16000, this.context.sampleRate / 2);
+      // Logarithmic bands keep bass, voices and treble visible at every sample rate.
+      this.bandRanges = Array.from(this.visualBands, (_, index) => {
+        const lowHz = 35 * Math.pow(maxHz / 35, index / 48);
+        const highHz = 35 * Math.pow(maxHz / 35, (index + 1) / 48);
+        const start = Math.max(1, Math.floor(lowHz / binHz));
+        const end = Math.min(
+          this.frequencyData.length,
+          Math.max(start + 1, Math.floor(highHz / binHz)),
+        );
+        return { start, end };
+      });
       this.master.connect(this.compressor);
       this.compressor.connect(this.analyser);
       this.analyser.connect(this.context.destination);
@@ -103,6 +130,7 @@ class PulseAudio {
 
   load(track) {
     this.pause();
+    this.resetAnalysis();
     this.track = track;
     this.offset = 0;
     if (track.local) {
@@ -160,6 +188,7 @@ class PulseAudio {
 
   async seek(seconds) {
     const nextPosition = Math.max(0, Math.min(seconds, this.duration));
+    this.resetAnalysis();
     if (this.track?.local) {
       this.localAudio.currentTime = nextPosition;
       return;
@@ -410,23 +439,56 @@ class PulseAudio {
     );
   }
 
+  resetAnalysis() {
+    this.visualReference = 0.06;
+    this.lastAnalysisAt = this.context?.currentTime || 0;
+    this.visualBands.fill(0);
+    this.levels.bass = 0;
+    this.levels.energy = 0;
+    this.levels.rms = 0;
+  }
+
   getLevels() {
-    if (!this.analyser)
-      return { bass: 0, energy: 0, bins: null, waveform: null };
+    if (!this.analyser) return this.levels;
     this.analyser.getByteFrequencyData(this.frequencyData);
     this.analyser.getByteTimeDomainData(this.waveformData);
+    this.analyser.getFloatFrequencyData(this.frequencyDb);
+    this.analyser.getFloatTimeDomainData(this.timeData);
+    const now = this.context.currentTime;
+    const elapsed = Math.max(0, Math.min(0.1, now - this.lastAnalysisAt));
+    this.lastAnalysisAt = now;
+    let power = 0;
+    for (const sample of this.timeData) power += sample * sample;
+    const rms = Math.sqrt(power / this.timeData.length);
+    this.levels.rms = rms;
+    // Follow the music's own loudness. A fixed floor keeps silence and noise still.
+    const referenceRate = rms > this.visualReference ? 0.06 : 2.5;
+    this.visualReference +=
+      (rms - this.visualReference) * (1 - Math.exp(-elapsed / referenceRate));
+    const reference = Math.max(0.018, this.visualReference);
     let bass = 0;
-    let energy = 0;
-    for (let index = 0; index < 32; index += 1) {
-      energy += this.frequencyData[index];
-      if (index < 4) bass += this.frequencyData[index];
+    for (let index = 0; index < this.visualBands.length; index += 1) {
+      const { start, end } = this.bandRanges[index];
+      let bandPower = 0;
+      for (let bin = start; bin < end; bin += 1) {
+        bandPower += Math.pow(10, this.frequencyDb[bin] / 10);
+      }
+      const bandAmplitude = Math.sqrt(bandPower);
+      const target =
+        rms > 0.0002
+          ? Math.min(1, Math.sqrt(bandAmplitude / reference) * 0.74)
+          : 0;
+      const response = target > this.visualBands[index] ? 0.035 : 0.18;
+      this.visualBands[index] +=
+        (target - this.visualBands[index]) *
+        (1 - Math.exp(-elapsed / response));
+      if (index < 13) bass = Math.max(bass, this.visualBands[index]);
     }
-    return {
-      bass: bass / 1020,
-      energy: energy / 8160,
-      bins: this.frequencyData,
-      waveform: this.waveformData,
-    };
+    this.levels.bass = bass;
+    const energy = rms > 0.0002 ? Math.min(1, (rms / reference) * 0.72) : 0;
+    this.levels.energy +=
+      (energy - this.levels.energy) * (1 - Math.exp(-elapsed / 0.12));
+    return this.levels;
   }
 
   dispose() {

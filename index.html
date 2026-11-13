@@ -114,13 +114,13 @@
         </symbol>
       </defs>
     </svg>
+    <canvas id="music-visualizer" aria-hidden="true"></canvas>
     <canvas id="particles" aria-hidden="true"></canvas>
     <aside class="sidebar" aria-label="主导航">
       <a class="brand" href="#" aria-label="PULSE 首页"
         ><span class="brand-mark"><i></i><i></i><i></i><i></i></span
         ><span>PULSE<span class="brand-dot">.</span></span></a
       >
-      <div class="sidebar-caption">你的音乐，正在发生</div>
       <nav class="main-nav">
         <button class="nav-item active" data-view="discover">
           <svg><use href="#i-discover" /></svg><span>发现音乐</span
@@ -152,14 +152,9 @@
         <button class="import-button" id="import-button">
           <span class="import-icon"
             ><svg><use href="#i-plus" /></svg></span
-          ><span><strong>带上你的音乐</strong><small>导入本地音频</small></span
+          ><span><strong>导入本地音乐</strong></span
           ><svg class="import-arrow"><use href="#i-chevron" /></svg>
         </button>
-        <div class="sidebar-foot">
-          <span class="status-dot"></span>为每一份热爱，保持共振<svg>
-            <use href="#i-headphones" />
-          </svg>
-        </div>
       </div>
     </aside>
     <div class="main-shell">
@@ -203,21 +198,15 @@
           </div>
           <canvas id="hero-waveform" aria-hidden="true"></canvas>
           <div class="hero-copy">
-            <h1 id="hero-title">
-              让心跳<br />跟上<span class="outlined-word">节拍</span>
+            <h1 id="hero-title" class="electric-heading">
+              让心跳<br />跟上<span class="electric-word">节拍</span>
             </h1>
-            <p>戴上耳机，把世界调成你喜欢的频率。</p>
             <div class="hero-actions">
               <button class="button-primary" id="hero-play">
                 <svg><use href="#i-play" /></svg><span>即刻开听</span></button
               ><button class="button-text" id="hero-immersive">
                 进入沉浸声场<svg><use href="#i-arrow" /></svg>
               </button>
-            </div>
-            <div class="hero-bottom">
-              <span class="mini-equalizer"
-                ><i></i><i></i><i></i><i></i><i></i></span
-              ><span id="hero-status">声音就绪，等你按下播放</span>
             </div>
           </div>
           <button
@@ -241,9 +230,6 @@
           >
             ♩
           </button>
-          <div class="hero-corner">
-            <span>立体声体验</span><svg><use href="#i-headphones" /></svg>
-          </div>
         </section>
 
         <section
@@ -277,7 +263,6 @@
                 律动 House
               </button>
             </div>
-            <span class="section-note"><span></span>原创合成音乐</span>
           </div>
           <div class="track-grid" id="track-grid"></div>
           <div class="empty-state" id="empty-state" hidden>
@@ -296,16 +281,11 @@
           aria-labelledby="studio-title"
         >
           <div class="studio-intro">
-            <h2 id="studio-title">你的指尖，也有节拍。</h2>
-            <p>轻触琴键，或按下键盘 A S D F G H<br />让旋律和光，一起跳动。</p>
+            <h2 id="studio-title" class="electric-heading">
+              你的指尖<br />也有<span class="electric-word">节拍</span>
+            </h2>
           </div>
           <div class="pads-wrap">
-            <div class="pad-topline">
-              <span>触碰 · 聆听 · 共振</span
-              ><span
-                >PENTATONIC SYNTH <svg><use href="#i-spark" /></svg
-              ></span>
-            </div>
             <div class="pads" id="pads">
               <button
                 class="music-pad"
@@ -357,8 +337,7 @@
               </button>
             </div>
             <div class="pad-bottomline">
-              <span>六个音符，无限可能</span
-              ><button id="reverb-toggle" aria-pressed="true">
+              <button id="reverb-toggle" aria-pressed="true">
                 <span class="status-dot"></span>空间混响 ON
               </button>
             </div>
@@ -366,7 +345,6 @@
         </section>
         <footer class="page-footer">
           <a class="footer-brand" href="#">PULSE<span>.</span></a
-          ><span>保持热爱，保持共振。</span
           ><span class="keyboard-hint"><kbd>Space</kbd> 播放 / 暂停</span>
         </footer>
       </main>
@@ -473,7 +451,6 @@
       <canvas id="soundscape" aria-hidden="true"></canvas>
       <div class="immersive-top">
         <a class="footer-brand" href="#">PULSE<span>.</span></a
-        ><span>拖动光点，留下你的频率</span
         ><button
           class="icon-button"
           id="immersive-close"
@@ -497,8 +474,7 @@
         </button>
       </div>
       <div class="immersive-footer">
-        <span>戴上耳机，让声音包围你。</span
-        ><span id="immersive-bpm">110 BPM</span>
+        <span id="immersive-bpm">110 BPM</span>
       </div>
     </dialog>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>

@@ -58,3 +58,19 @@
   font-display: swap;
   src: url(font-8.ttf) format("truetype");
 }
+
+@font-face {
+  font-family: "Pulse Display";
+  font-style: normal;
+  font-weight: 900;
+  font-display: swap;
+  src: url(pulse-display.woff) format("woff");
+}
+
+@font-face {
+  font-family: "Archivo Black";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(archivo-black.woff) format("woff");
+}
