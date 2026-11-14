@@ -15,7 +15,7 @@ const tracks = [
   {
     id: "lunar",
     title: "Lunar Drift",
-    coverTitle: "lunar\ndrift",
+    coverTitle: "Lunar\nDrift",
     genre: "ambient",
     style: "氛围漫游",
     mood: "星际漂浮",
@@ -28,7 +28,7 @@ const tracks = [
   {
     id: "soft",
     title: "Soft Focus",
-    coverTitle: "soft\nfocus",
+    coverTitle: "Soft\nFocus",
     genre: "lofi",
     style: "Lo-fi 时刻",
     mood: "温柔放空",
@@ -41,7 +41,7 @@ const tracks = [
   {
     id: "green",
     title: "Green Room",
-    coverTitle: "GREEN\nROOM",
+    coverTitle: "Green\nRoom",
     genre: "house",
     style: "律动 House",
     mood: "自由律动",
@@ -58,6 +58,9 @@ const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 const icon = (name) => `<svg aria-hidden="true"><use href="#i-${name}"/></svg>`;
 const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
+const finePointerPreference = window.matchMedia(
+  "(hover: hover) and (pointer: fine)",
+);
 
 function readPreference(key, fallback) {
   try {
@@ -377,10 +380,12 @@ $$("[data-collection]").forEach((button) =>
     setView("discover", button.dataset.collection),
   ),
 );
-$(".brand").addEventListener("click", (event) => {
-  event.preventDefault();
-  setView("discover");
-});
+$$(".brand, .mobile-brand").forEach((link) =>
+  link.addEventListener("click", (event) => {
+    event.preventDefault();
+    setView("discover");
+  }),
+);
 $(".page-footer .footer-brand").addEventListener("click", (event) => {
   event.preventDefault();
   setView("discover");
@@ -492,6 +497,10 @@ document.addEventListener("click", (event) => {
 function updateEffects() {
   document.body.classList.toggle("motion-off", !state.effects);
   $("#effects-toggle").setAttribute("aria-pressed", String(state.effects));
+  $("#effects-toggle").setAttribute(
+    "aria-label",
+    state.effects ? "关闭互动特效" : "开启互动特效",
+  );
   $("#effects-toggle span:nth-child(2)").textContent = state.effects
     ? "特效已开启"
     : "特效已关闭";
@@ -499,6 +508,7 @@ function updateEffects() {
     particles.length = 0;
     rings.length = 0;
     trailPointer = null;
+    clearSpotlight();
     $("#hero-image").style.transform = "";
     $(".sound-orb").style.setProperty("--orb-scale", 1);
   }
@@ -671,6 +681,14 @@ const noteColors = [
 ];
 let trailPointer = null;
 let trailColor = 0;
+let highlightedSurface = null;
+let pendingSpotlight = null;
+
+function clearSpotlight() {
+  highlightedSurface?.classList.remove("is-lit");
+  highlightedSurface = null;
+  pendingSpotlight = null;
+}
 const starfield = Array.from({ length: 85 }, () => ({
   x: Math.random(),
   y: Math.random(),
@@ -782,6 +800,17 @@ document.addEventListener(
   "pointermove",
   (event) => {
     if (!state.effects || event.pointerType === "touch") return;
+    const surface = finePointerPreference.matches
+      ? event.target.closest(".track-card, .music-pad")
+      : null;
+    if (highlightedSurface !== surface) {
+      highlightedSurface?.classList.remove("is-lit");
+      highlightedSurface = surface;
+      highlightedSurface?.classList.add("is-lit");
+    }
+    pendingSpotlight = surface
+      ? { surface, x: event.clientX, y: event.clientY }
+      : null;
     const now = performance.now();
     const previous = trailPointer;
     const distance = previous
@@ -822,9 +851,11 @@ document.addEventListener(
 
 window.addEventListener("blur", () => {
   trailPointer = null;
+  clearSpotlight();
 });
 document.addEventListener("pointerleave", () => {
   trailPointer = null;
+  clearSpotlight();
 });
 
 function drawParticles(target) {
@@ -1004,6 +1035,15 @@ let lastUiFrame = 0;
 function animate(time) {
   const delta = Math.min((time - previousFrame) / 16.67, 2);
   previousFrame = time;
+  if (pendingSpotlight) {
+    const { surface, x, y } = pendingSpotlight;
+    if (surface.isConnected) {
+      const rectangle = surface.getBoundingClientRect();
+      surface.style.setProperty("--light-x", `${x - rectangle.left}px`);
+      surface.style.setProperty("--light-y", `${y - rectangle.top}px`);
+    }
+    pendingSpotlight = null;
+  }
   context.clearRect(0, 0, width, height);
   for (let index = particles.length - 1; index >= 0; index -= 1) {
     const particle = particles[index];

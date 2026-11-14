@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#101210" />
+    <meta name="theme-color" content="#080e0c" />
     <meta
       name="description"
       content="PULSE 心跳声场。探索原创电子音乐，弹奏自己的旋律，让音符与光跟随每一次心跳。"
@@ -14,9 +14,9 @@
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23101210'/%3E%3Cpath d='M13 33h9l5-16 9 31 5-15h10' stroke='%23ceff57' stroke-width='5' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E"
     />
     <link rel="stylesheet" href="assets/fonts/fonts.css?v=2.1.0" />
-    <link rel="stylesheet" href="styles.css?v=2.1.1" />
+    <link rel="stylesheet" href="styles.css?v=2.2.0" />
     <script src="audio-engine.js?v=2.1.0" defer></script>
-    <script src="app.js?v=2.1.1" defer></script>
+    <script src="app.js?v=2.2.0" defer></script>
   </head>
   <body>
     <svg
@@ -122,34 +122,49 @@
         ><span>PULSE<span class="brand-dot">.</span></span></a
       >
       <nav class="main-nav">
-        <button class="nav-item active" data-view="discover">
+        <button
+          class="nav-item active"
+          data-view="discover"
+          aria-label="发现音乐"
+        >
           <svg><use href="#i-discover" /></svg><span>发现音乐</span
           ><span class="nav-active-dot"></span>
         </button>
-        <button class="nav-item" data-view="favorites">
+        <button class="nav-item" data-view="favorites" aria-label="我的收藏">
           <svg><use href="#i-heart" /></svg><span>我的收藏</span
           ><span class="count" id="favorite-count">0</span>
         </button>
-        <button class="nav-item" data-view="library">
+        <button class="nav-item" data-view="library" aria-label="音乐资料库">
           <svg><use href="#i-library" /></svg><span>音乐资料库</span>
         </button>
-        <button class="nav-item" data-view="studio">
+        <button class="nav-item" data-view="studio" aria-label="节拍实验室">
           <svg><use href="#i-sliders" /></svg><span>节拍实验室</span>
         </button>
       </nav>
-      <div class="sidebar-section-label">我的声场</div>
-      <button class="collection-link" data-collection="night">
+      <button
+        class="collection-link"
+        data-collection="night"
+        aria-label="深夜漫游"
+      >
         <span class="collection-symbol night"
           ><svg><use href="#i-moon" /></svg></span
         ><span>深夜漫游</span>
       </button>
-      <button class="collection-link" data-collection="focus">
+      <button
+        class="collection-link"
+        data-collection="focus"
+        aria-label="专注时刻"
+      >
         <span class="collection-symbol focus"
           ><svg><use href="#i-spark" /></svg></span
         ><span>专注时刻</span>
       </button>
       <div class="sidebar-bottom">
-        <button class="import-button" id="import-button">
+        <button
+          class="import-button"
+          id="import-button"
+          aria-label="导入本地音乐"
+        >
           <span class="import-icon"
             ><svg><use href="#i-plus" /></svg></span
           ><span><strong>导入本地音乐</strong></span
@@ -159,16 +174,18 @@
     </aside>
     <div class="main-shell">
       <header class="topbar">
+        <a class="mobile-brand" href="#" aria-label="PULSE 首页"
+          >PULSE<span>.</span></a
+        >
         <div class="breadcrumb">
-          音乐空间<span>/</span
-          ><strong id="breadcrumb-current">发现音乐</strong>
+          <strong id="breadcrumb-current">发现音乐</strong>
         </div>
         <label class="search-box"
           ><svg><use href="#i-search" /></svg
           ><input
             id="search"
             type="search"
-            placeholder="探索声音、风格、灵感…"
+            placeholder="搜索音乐、风格"
             aria-label="搜索音乐"
             autocomplete="off"
           /><kbd>/</kbd></label
@@ -290,7 +307,7 @@
               <button
                 class="music-pad"
                 data-note="0"
-                style="--pad-color: #d1ff60"
+                style="--pad-color: #c8ff68"
               >
                 <span class="pad-note">C</span><span class="pad-key">A</span
                 ><span class="pad-wave"></span>
@@ -298,7 +315,7 @@
               <button
                 class="music-pad"
                 data-note="1"
-                style="--pad-color: #b9f592"
+                style="--pad-color: #bbff8b"
               >
                 <span class="pad-note">D</span><span class="pad-key">S</span
                 ><span class="pad-wave"></span>
@@ -306,7 +323,7 @@
               <button
                 class="music-pad"
                 data-note="2"
-                style="--pad-color: #9eebc2"
+                style="--pad-color: #a6fcb0"
               >
                 <span class="pad-note">E</span><span class="pad-key">D</span
                 ><span class="pad-wave"></span>
@@ -314,7 +331,7 @@
               <button
                 class="music-pad"
                 data-note="3"
-                style="--pad-color: #9adbe1"
+                style="--pad-color: #8df5c8"
               >
                 <span class="pad-note">G</span><span class="pad-key">F</span
                 ><span class="pad-wave"></span>
@@ -322,7 +339,7 @@
               <button
                 class="music-pad"
                 data-note="4"
-                style="--pad-color: #b3b5f7"
+                style="--pad-color: #79eed9"
               >
                 <span class="pad-note">A</span><span class="pad-key">G</span
                 ><span class="pad-wave"></span>
@@ -330,7 +347,7 @@
               <button
                 class="music-pad"
                 data-note="5"
-                style="--pad-color: #d2a5ef"
+                style="--pad-color: #72e4e3"
               >
                 <span class="pad-note">C</span><span class="pad-key">H</span
                 ><span class="pad-wave"></span>
