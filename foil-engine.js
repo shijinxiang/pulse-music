@@ -170,7 +170,10 @@ class PulseFoil {
       texture(192, (context) => {
         for (let index = 0; index < 70; index += 1) {
           context.globalAlpha = 0.45 + random() * 0.55;
-          context.fillStyle = "#fff";
+          context.fillStyle =
+            random() < 0.45
+              ? "#fff"
+              : `rgb(${PulseFoil.diffraction(0.28 + random() * 0.24).join(" ")})`;
           context.beginPath();
           context.arc(
             random() * 192,
@@ -244,13 +247,16 @@ class PulseFoil {
 
     for (const { element, rectangle } of measurements) {
       const kind = element.dataset.foil;
-      const pressed = element.matches(":active, .pressed");
+      const pressed =
+        element.matches(":active, .pressed") ||
+        Boolean(element.closest(".music-pad.pressed"));
       const lampY = this.y + (pressed ? 70 : 0);
       const dx = rectangle.left + rectangle.width / 2 - this.x;
       const dy = rectangle.top + rectangle.height / 2 - lampY;
       const style = element.style;
       style.setProperty("--lx", `${this.x - rectangle.left}px`);
       style.setProperty("--ly", `${lampY - rectangle.top}px`);
+      if (kind === "pearl" || kind === "glitter") continue;
       if (kind === "seal") {
         const distance = Math.hypot(dx, dy);
         const projection = distance / Math.hypot(distance, 300);

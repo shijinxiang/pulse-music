@@ -59,6 +59,13 @@ const $$ = (selector) => [...document.querySelectorAll(selector)];
 const icon = (name) => `<svg aria-hidden="true"><use href="#i-${name}"/></svg>`;
 const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
 const foil = new PulseFoil();
+const heroScene = new PulseHeroScene($("#hero-scene"), $("#hero-image"));
+const cardMaterials = [
+  { className: "foil light", kind: "foil" },
+  { className: "material-brushed", kind: "foil" },
+  { className: "material-glitter", kind: "glitter" },
+  { className: "material-pearl", kind: "pearl" },
+];
 
 function readPreference(key, fallback) {
   try {
@@ -150,13 +157,15 @@ function renderTracks() {
   $("#track-grid").innerHTML = filtered
     .map((track) => {
       const liked = state.favorites.has(track.id);
-      return `<article class="track-card foil light${audio.playing && track.id === state.currentId ? " playing" : ""}" data-foil="foil" data-track="${track.id}">
+      const material = cardMaterials[track.art % cardMaterials.length];
+      return `<article class="track-card collector-card${audio.playing && track.id === state.currentId ? " playing" : ""}" data-track="${track.id}">
+      <span class="material-rim ${material.className}" data-foil="${material.kind}" aria-hidden="true"></span>
       <div class="cover-wrap">
         <div class="cover-image album-art art-${track.art}" role="img" aria-label="${escapeText(track.title)} 专辑封面"></div>
         <div class="cover-shade"></div>
         <span class="cover-title">${escapeText(track.coverTitle)}</span>
         <button class="cover-select" data-play="${track.id}" aria-label="播放 ${escapeText(track.title)}"></button>
-        <span class="cover-play foil-seal" data-foil="seal" aria-hidden="true">${icon("play")}</span>
+        <span class="cover-play material-pearl" data-foil="pearl" aria-hidden="true">${icon("play")}</span>
       </div>
       <div class="track-info-row"><h3 class="track-name"><button class="track-title-button" data-play="${track.id}">${escapeText(track.title)}</button></h3><button class="icon-button like-button" data-like="${track.id}" aria-label="${liked ? "取消收藏" : "收藏"} ${escapeText(track.title)}" aria-pressed="${liked}">${icon("heart")}</button></div>
       <div class="track-meta"><span class="track-meta-left">${escapeText(track.style)}</span><span class="track-bpm">${track.local ? formatTime(track.duration) : `${track.bpm} BPM`}</span></div>
@@ -280,7 +289,7 @@ function updatePlayback() {
     $(selector).setAttribute("aria-label", audio.playing ? "暂停" : "播放");
   });
   $("#hero-play").innerHTML =
-    `${icon(audio.playing ? "pause" : "play")}<span>${audio.playing ? "暂停音乐" : "即刻开听"}</span>`;
+    `<span class="material-rim foil light" data-foil="foil" aria-hidden="true"></span>${icon(audio.playing ? "pause" : "play")}<span>${audio.playing ? "暂停音乐" : "即刻开听"}</span>`;
   updateCardPlayback();
   renderQueue();
 }
@@ -510,6 +519,7 @@ function updateEffects() {
     rings.length = 0;
     trailPointer = null;
     $("#hero-image").style.transform = "";
+    heroScene.setParallax(0, 0);
     $(".sound-orb").style.setProperty("--orb-scale", 1);
   }
 }
@@ -526,8 +536,9 @@ motionPreference.addEventListener("change", (event) => {
 $("#reverb-toggle").addEventListener("click", () => {
   audio.setReverb(!audio.reverbEnabled);
   $("#reverb-toggle").setAttribute("aria-pressed", String(audio.reverbEnabled));
-  $("#reverb-toggle").innerHTML =
-    `<span class="status-dot"></span>空间混响 ${audio.reverbEnabled ? "ON" : "OFF"}`;
+  $("#reverb-toggle .reverb-state").textContent = audio.reverbEnabled
+    ? "ON"
+    : "OFF";
 });
 
 async function playNote(index, target) {
@@ -663,7 +674,7 @@ $("#file-input").addEventListener("change", async (event) => {
 const canvas = $("#particles");
 const context = canvas.getContext("2d");
 const visualizerCanvas = $("#music-visualizer");
-const visualizer = visualizerCanvas.getContext("2d");
+const nebula = new PulseNebulaField(visualizerCanvas);
 const sceneCanvas = $("#soundscape");
 const scene = sceneCanvas.getContext("2d");
 const heroWaveCanvas = $("#hero-waveform");
@@ -697,26 +708,19 @@ let pixelRatio = Math.min(window.devicePixelRatio || 1, 1.75);
 let orb = { x: width / 2, y: height * 0.38 };
 let pointerDown = false;
 let lastPointerNote = 0;
-let backgroundRing = { x: 0, y: 0, radius: 0 };
 
 function resizeCanvas() {
   foil.invalidate();
   width = window.innerWidth;
   height = window.innerHeight;
   pixelRatio = Math.min(window.devicePixelRatio || 1, 1.75);
-  [canvas, sceneCanvas, visualizerCanvas].forEach((element) => {
+  [canvas, sceneCanvas].forEach((element) => {
     element.width = Math.floor(width * pixelRatio);
     element.height = Math.floor(height * pixelRatio);
   });
   context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   scene.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-  visualizer.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-  const desktop = width > 760;
-  backgroundRing = {
-    x: width * (desktop ? 2 / 3 : 0.5),
-    y: height * 0.5,
-    radius: width * (desktop ? 1 / 3 : 0.42),
-  };
+  nebula.resize(width, height, pixelRatio);
   resizeHeroWaveform();
   if ($("#immersive").open) {
     const rectangle = $(".sound-orb").getBoundingClientRect();
@@ -925,9 +929,11 @@ $("#hero").addEventListener("pointermove", (event) => {
   const y = (event.clientY - rectangle.y) / rectangle.height - 0.5;
   $("#hero-image").style.transform =
     `translate(${x * 12}px,${y * 10}px) scale(1.035)`;
+  heroScene.setParallax(x, y);
 });
 $("#hero").addEventListener("pointerleave", () => {
   $("#hero-image").style.transform = "";
+  heroScene.setParallax(0, 0);
 });
 
 function drawSoundscape(time, levels) {
@@ -1045,14 +1051,9 @@ function animate(time) {
   }
   drawParticles(context);
   const levels = audio.getLevels();
-  visualizer.clearRect(0, 0, width, height);
-  drawFrequencyRing(
-    visualizer,
-    backgroundRing.x,
-    backgroundRing.y,
-    backgroundRing.radius,
-    levels,
-  );
+  if (heroVisible)
+    heroScene.render(time, levels, state.effects && !motionPreference.matches);
+  nebula.render(time, levels, state.effects && !motionPreference.matches);
   drawHeroWaveform(levels);
   if ($("#immersive").open) drawSoundscape(time, levels);
   if (time - lastUiFrame > 90) {
