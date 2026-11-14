@@ -59,13 +59,8 @@ const $$ = (selector) => [...document.querySelectorAll(selector)];
 const icon = (name) => `<svg aria-hidden="true"><use href="#i-${name}"/></svg>`;
 const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
 const foil = new PulseFoil();
+const kine = new PulseKine();
 const heroScene = new PulseHeroScene($("#hero-scene"), $("#hero-image"));
-const cardMaterials = [
-  { className: "foil light", kind: "foil" },
-  { className: "material-brushed", kind: "foil" },
-  { className: "material-glitter", kind: "glitter" },
-  { className: "material-pearl", kind: "pearl" },
-];
 
 function readPreference(key, fallback) {
   try {
@@ -157,9 +152,8 @@ function renderTracks() {
   $("#track-grid").innerHTML = filtered
     .map((track) => {
       const liked = state.favorites.has(track.id);
-      const material = cardMaterials[track.art % cardMaterials.length];
       return `<article class="track-card collector-card${audio.playing && track.id === state.currentId ? " playing" : ""}" data-track="${track.id}">
-      <span class="material-rim ${material.className}" data-foil="${material.kind}" aria-hidden="true"></span>
+      <span class="material-rim foil light" data-foil="foil" aria-hidden="true"></span>
       <div class="cover-wrap">
         <div class="cover-image album-art art-${track.art}" role="img" aria-label="${escapeText(track.title)} 专辑封面"></div>
         <div class="cover-shade"></div>
@@ -218,6 +212,31 @@ function renderQueue() {
   foil.invalidate();
 }
 
+function updateFilterChips(filter) {
+  const chips = $$(".filter-chip");
+  const previous = chips.map((chip) => chip.getBoundingClientRect());
+  for (const chip of chips) {
+    for (const animation of chip.getAnimations()) animation.cancel();
+    const active = chip.dataset.filter === filter;
+    chip.classList.toggle("active", active);
+    chip.setAttribute("aria-pressed", String(active));
+  }
+  if (!state.effects || motionPreference.matches) return;
+  const next = chips.map((chip) => chip.getBoundingClientRect());
+  chips.forEach((chip, index) => {
+    const before = previous[index];
+    const after = next[index];
+    if (!before.width || !after.width) return;
+    chip.animate(
+      [
+        { transform: `translate(${before.left - after.left}px, ${before.top - after.top}px) scaleX(${before.width / after.width})` },
+        { transform: "translate(0, 0) scaleX(1)" },
+      ],
+      { duration: 380, easing: "cubic-bezier(0.2, 1.18, 0.4, 1)" },
+    );
+  });
+}
+
 function setView(view, collection = null) {
   state.view = view;
   state.collection = collection;
@@ -258,11 +277,7 @@ function setView(view, collection = null) {
     `${collection ? (collection === "night" ? "给深夜，一点回响" : "把世界，调成静音") : titles[view] || titles.discover}<span class="lime-dot">.</span>`;
   $("#all-music").hidden = view === "library";
   $("#library-import").hidden = view !== "library";
-  $$(".filter-chip").forEach((button) => {
-    const active = button.dataset.filter === "all";
-    button.classList.toggle("active", active);
-    button.setAttribute("aria-pressed", String(active));
-  });
+  updateFilterChips("all");
   renderTracks();
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -404,10 +419,7 @@ $("#reset-filter").addEventListener("click", () => setView("discover"));
 $$("[data-filter]").forEach((button) =>
   button.addEventListener("click", () => {
     state.filter = button.dataset.filter;
-    $$(".filter-chip").forEach((chip) => {
-      chip.classList.toggle("active", chip === button);
-      chip.setAttribute("aria-pressed", String(chip === button));
-    });
+    updateFilterChips(state.filter);
     renderTracks();
   }),
 );
@@ -682,6 +694,21 @@ const heroWaveContext = heroWaveCanvas.getContext("2d");
 let heroWaveWidth = 0;
 let heroWaveHeight = 0;
 let heroVisible = true;
+const heroElement = $("#hero");
+const heroArt = $(".hero-art");
+const heroNotes = $$(".hero-note").map((element) => ({
+  element,
+  x: 0,
+  y: 0,
+  vx: 0,
+  vy: 0,
+  anchorX: 0,
+  anchorY: 0,
+}));
+let heroGeometry = null;
+let heroGeometryDirty = true;
+let heroPointer = null;
+let lastHeroDepth = "";
 const particles = [];
 const rings = [];
 const notes = ["♪", "♫", "♬", "♩"];
@@ -731,6 +758,15 @@ function resizeCanvas() {
   }
 }
 window.addEventListener("resize", resizeCanvas);
+window.addEventListener("resize", () => {
+  heroGeometryDirty = true;
+});
+new ResizeObserver(() => {
+  heroGeometryDirty = true;
+}).observe(heroElement);
+window.addEventListener("blur", () => {
+  heroPointer = null;
+});
 document.fonts.ready.then(resizeCanvas);
 
 function resizeHeroWaveform() {
@@ -922,19 +958,67 @@ $("#immersive").addEventListener("pointermove", (event) => {
       .catch((error) => toast(error.message));
   }
 });
-$("#hero").addEventListener("pointermove", (event) => {
-  if (!state.effects || event.pointerType === "touch") return;
-  const rectangle = $("#hero").getBoundingClientRect();
-  const x = (event.clientX - rectangle.x) / rectangle.width - 0.5;
-  const y = (event.clientY - rectangle.y) / rectangle.height - 0.5;
-  $("#hero-image").style.transform =
-    `translate(${x * 12}px,${y * 10}px) scale(1.035)`;
-  heroScene.setParallax(x, y);
+heroElement.addEventListener("pointermove", (event) => {
+  if (event.pointerType !== "mouse") return;
+  heroPointer = { x: event.clientX, y: event.clientY };
+}, { passive: true });
+heroElement.addEventListener("pointerleave", () => {
+  heroPointer = null;
 });
-$("#hero").addEventListener("pointerleave", () => {
-  $("#hero-image").style.transform = "";
-  heroScene.setParallax(0, 0);
-});
+
+function updateHeroMotion(delta) {
+  if (heroGeometryDirty) {
+    const rectangle = heroElement.getBoundingClientRect();
+    heroGeometry = {
+      left: rectangle.left,
+      top: rectangle.top + scrollY,
+      width: rectangle.width,
+      height: rectangle.height,
+    };
+    for (const note of heroNotes) {
+      const bounds = note.element.getBoundingClientRect();
+      note.anchorX = bounds.left + bounds.width / 2 - note.x;
+      note.anchorY = bounds.top + scrollY + bounds.height / 2 - note.y;
+    }
+    heroGeometryDirty = false;
+  }
+  const enabled = state.effects && !motionPreference.matches;
+  const depth = enabled ? Math.min(scrollY, heroGeometry.height) : 0;
+  const depthKey = `${depth},${enabled}`;
+  if (depthKey !== lastHeroDepth) {
+    lastHeroDepth = depthKey;
+    heroArt.style.setProperty("--hero-scroll", `${depth * (width > 760 ? 0.13 : 0.08)}px`);
+    visualizerCanvas.style.transform = `translate3d(0, ${enabled ? -Math.min(scrollY * 0.055, 80) : 0}px, 0)`;
+  }
+  const pointer = enabled && heroVisible && heroGeometry.width && heroGeometry.height
+    ? heroPointer : null;
+  const top = heroGeometry.top - scrollY;
+  heroScene.setParallax(
+    pointer ? (pointer.x - heroGeometry.left) / heroGeometry.width - 0.5 : 0,
+    pointer ? (pointer.y - top) / heroGeometry.height - 0.5 : 0,
+  );
+  const damping = Math.exp(-0.29 * delta);
+  for (const note of heroNotes) {
+    let targetX = 0;
+    let targetY = enabled ? depth * 0.065 : 0;
+    if (pointer && !note.element.matches(":focus-visible, :active")) {
+      const dx = note.anchorX - pointer.x;
+      const dy = note.anchorY - scrollY + targetY - pointer.y;
+      const distance = Math.hypot(dx, dy);
+      const force = Math.pow(Math.max(0, 1 - distance / 132), 2) * 60;
+      const direction = Math.max(distance, 1);
+      targetX = (dx / direction) * force;
+      targetY += (dy / direction) * force;
+      targetX = Math.max(28 - note.anchorX, Math.min(width - 28 - note.anchorX, targetX));
+    }
+    note.vx = (note.vx + (targetX - note.x) * 0.085 * delta) * damping;
+    note.vy = (note.vy + (targetY - note.y) * 0.085 * delta) * damping;
+    note.x += note.vx * delta;
+    note.y += note.vy * delta;
+    if (!enabled) note.x = note.y = note.vx = note.vy = 0;
+    note.element.style.translate = `${note.x.toFixed(2)}px ${note.y.toFixed(2)}px`;
+  }
+}
 
 function drawSoundscape(time, levels) {
   scene.clearRect(0, 0, width, height);
@@ -1030,7 +1114,9 @@ let lastUiFrame = 0;
 function animate(time) {
   const delta = Math.min((time - previousFrame) / 16.67, 2);
   previousFrame = time;
+  updateHeroMotion(delta);
   foil.update();
+  kine.render(foil);
   context.clearRect(0, 0, width, height);
   for (let index = particles.length - 1; index >= 0; index -= 1) {
     const particle = particles[index];

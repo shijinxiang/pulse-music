@@ -27,6 +27,7 @@ class PulseHeroScene {
       [199, 151, 255],
     ];
     this.cloudRing = this.makeCloudRing(this.makeCloudTexture());
+    this.cloudMist = this.makeCloudMist(this.cloudRing);
     this.observer = new ResizeObserver(() => this.resize());
     this.observer.observe(this.container);
     image.addEventListener("load", () => this.resize());
@@ -117,13 +118,13 @@ class PulseHeroScene {
     }
     this.context.setTransform(this.ratio, 0, 0, this.ratio, 0, 0);
     const scale = Math.min(
-      this.width / this.image.naturalWidth,
+      (this.width * (innerWidth > 760 ? 0.7 : 1)) / this.image.naturalWidth,
       this.height / this.image.naturalHeight,
     );
     const width = this.image.naturalWidth * scale;
     const height = this.image.naturalHeight * scale;
     this.photoRect = {
-      x: (this.width - width) / 2,
+      x: this.width * (innerWidth > 760 ? 0.68 : 0.5) - width / 2,
       y: (this.height - height) / 2,
       width,
       height,
@@ -167,6 +168,7 @@ class PulseHeroScene {
   }
 
   setParallax(x, y) {
+    if (this.parallax.x === x * 9 && this.parallax.y === y * 7) return;
     this.parallax.x = x * 9;
     this.parallax.y = y * 7;
     this.needsFrame = true;
@@ -175,7 +177,7 @@ class PulseHeroScene {
   makeCloudRing(texture) {
     const size = 1024;
     const radius = 360;
-    const band = 180;
+    const band = 250;
     const source = texture
       .getContext("2d")
       .getImageData(0, 0, texture.width, texture.height);
@@ -206,24 +208,31 @@ class PulseHeroScene {
     return canvas;
   }
 
+  makeCloudMist(texture) {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 1024;
+    const context = canvas.getContext("2d");
+    context.filter = "blur(14px)";
+    context.drawImage(texture, 0, 0);
+    return canvas;
+  }
+
   drawOrbit(front, energy) {
-    const radiusX = Math.min(
-      this.photoRect.width * 0.43,
-      this.width * 0.38 - 10,
-    );
-    const radiusY = this.photoRect.height * 0.2;
+    const desktop = innerWidth > 760;
+    const radiusX = this.width * (desktop ? 0.39 : 0.37);
+    const radiusY = this.photoRect.height * 0.28;
     const rotation = 0.17 + Math.sin(this.phase * 0.5) * 0.045;
     const layers = [
-      { offset: -5, scale: 1.02, opacity: 0.12 },
-      { offset: 0, scale: 1, opacity: 0.55 },
-      { offset: 5, scale: 0.98, opacity: 0.12 },
+      { offset: -8, scale: 1.03, opacity: 0.17, texture: this.cloudMist },
+      { offset: 0, scale: 1, opacity: 0.3, texture: this.cloudRing },
+      { offset: 8, scale: 0.98, opacity: 0.15, texture: this.cloudMist },
     ];
     const context = this.context;
     for (const layer of layers) {
       context.save();
       context.globalCompositeOperation = "screen";
       context.globalAlpha = layer.opacity * (1 + energy * 0.12);
-      context.translate(this.width / 2, this.height * 0.55 + layer.offset);
+      context.translate(this.width * (desktop ? 0.56 : 0.5), this.height * 0.55 + layer.offset);
       context.rotate(rotation);
       context.scale(
         (radiusX / 360) * layer.scale,
@@ -233,7 +242,7 @@ class PulseHeroScene {
       context.rect(-600, front ? 0 : -600, 1200, 600);
       context.clip();
       context.rotate(-this.phase + layer.offset * 0.008);
-      context.drawImage(this.cloudRing, -512, -512);
+      context.drawImage(layer.texture, -512, -512);
       context.restore();
     }
   }
@@ -276,7 +285,7 @@ class PulseHeroScene {
     for (let index = 0; index < 7; index += 1) {
       spectrum.addColorStop(
         0.18 + index * 0.105,
-        `rgba(${this.colors[index].join(",")},0.62)`,
+        `rgba(${this.colors[index].join(",")},0.26)`,
       );
     }
     spectrum.addColorStop(1, "transparent");
@@ -292,9 +301,9 @@ class PulseHeroScene {
       this.height,
     );
     mask.addColorStop(0, "transparent");
-    mask.addColorStop(0.42, "rgba(255,255,255,0.48)");
-    mask.addColorStop(0.5, "rgba(255,255,255,0.78)");
-    mask.addColorStop(0.58, "rgba(255,255,255,0.48)");
+    mask.addColorStop(0.42, "rgba(255,255,255,0.22)");
+    mask.addColorStop(0.5, "rgba(255,255,255,0.42)");
+    mask.addColorStop(0.58, "rgba(255,255,255,0.22)");
     mask.addColorStop(1, "transparent");
     context.fillStyle = mask;
     context.fillRect(0, 0, this.width, this.height);

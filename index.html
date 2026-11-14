@@ -15,12 +15,13 @@
     />
     <link rel="stylesheet" href="assets/fonts/fonts.css?v=2.1.0" />
     <link rel="stylesheet" href="styles.css?v=2.3.0" />
-    <link rel="stylesheet" href="foil.css?v=2.4.0" />
+    <link rel="stylesheet" href="foil.css?v=2.5.0" />
     <script src="audio-engine.js?v=2.1.0" defer></script>
     <script src="foil-engine.js?v=2.4.0" defer></script>
-    <script src="hero-scene.js?v=2.4.0" defer></script>
-    <script src="nebula-field.js?v=2.4.0" defer></script>
-    <script src="app.js?v=2.4.0" defer></script>
+    <script src="brand-kine.js?v=2.5.0" defer></script>
+    <script src="hero-scene.js?v=2.5.0" defer></script>
+    <script src="nebula-field.js?v=2.5.0" defer></script>
+    <script src="app.js?v=2.5.0" defer></script>
   </head>
   <body>
     <svg
@@ -124,7 +125,10 @@
     <aside class="sidebar" aria-label="主导航">
       <a class="brand" href="#" aria-label="PULSE 首页"
         ><span class="brand-mark"><i></i><i></i><i></i><i></i></span
-        ><span>PULSE<span class="brand-dot">.</span></span></a
+        ><span class="kine-word"
+          ><span class="kine-label">PULSE<span class="brand-dot">.</span></span
+          ></span
+        ></a
       >
       <nav class="main-nav">
         <button
@@ -180,7 +184,9 @@
     <div class="main-shell">
       <header class="topbar">
         <a class="mobile-brand" href="#" aria-label="PULSE 首页"
-          >PULSE<span>.</span></a
+          ><span class="kine-word"
+            ><span class="kine-label">PULSE.</span></span
+          ></a
         >
         <div class="breadcrumb">
           <strong id="breadcrumb-current">发现音乐</strong>
@@ -211,8 +217,8 @@
             <canvas id="hero-scene" aria-hidden="true"></canvas>
             <img
               id="hero-image"
-              src="assets/headphones-chrome-cutout.webp"
-              alt="银光下的金属耳机"
+              src="assets/headphones-ethereal-wireless.webp"
+              alt="薄雾与柔和虹彩中的半透明无线耳机"
               fetchpriority="high"
               width="1536"
               height="1024"
@@ -341,8 +347,8 @@
                 ><span class="pad-wave"></span>
               </button>
               <button
-                class="music-pad material-pearl"
-                data-foil="pearl"
+                class="music-pad material-brushed"
+                data-foil="foil"
                 data-note="1"
                 style="--pad-color: #d6d3e3"
               >
@@ -350,8 +356,8 @@
                 ><span class="pad-wave"></span>
               </button>
               <button
-                class="music-pad foil-seal material-star"
-                data-foil="seal"
+                class="music-pad material-brushed"
+                data-foil="foil"
                 data-note="2"
                 style="--pad-color: #d6d3e3"
               >
@@ -359,16 +365,17 @@
                 ><span class="pad-wave"></span>
               </button>
               <button
-                class="music-pad material-emboss"
+                class="music-pad material-brushed"
+                data-foil="foil"
                 data-note="3"
                 style="--pad-color: #d6d3e3"
               >
-                <span class="pad-note foil-text" data-foil="text">G</span
+                <span class="pad-note">G</span
                 ><span class="pad-key">F</span><span class="pad-wave"></span>
               </button>
               <button
-                class="music-pad material-glitter"
-                data-foil="glitter"
+                class="music-pad material-brushed"
+                data-foil="foil"
                 data-note="4"
                 style="--pad-color: #d6d3e3"
               >
@@ -376,7 +383,7 @@
                 ><span class="pad-wave"></span>
               </button>
               <button
-                class="music-pad foil light material-spectrum"
+                class="music-pad material-brushed"
                 data-foil="foil"
                 data-note="5"
                 style="--pad-color: #d6d3e3"
@@ -395,7 +402,10 @@
           </div>
         </section>
         <footer class="page-footer">
-          <a class="footer-brand" href="#">PULSE<span>.</span></a
+          <a class="footer-brand" href="#"
+            ><span class="kine-word"
+              ><span class="kine-label">PULSE.</span></span
+            ></a
           ><span class="keyboard-hint"><kbd>Space</kbd> 播放 / 暂停</span>
         </footer>
       </main>
@@ -506,7 +516,10 @@
     <dialog class="immersive" id="immersive" aria-labelledby="immersive-title">
       <canvas id="soundscape" aria-hidden="true"></canvas>
       <div class="immersive-top">
-        <a class="footer-brand" href="#">PULSE<span>.</span></a
+        <a class="footer-brand" href="#"
+          ><span class="kine-word"
+            ><span class="kine-label">PULSE.</span></span
+          ></a
         ><button
           class="icon-button"
           id="immersive-close"
