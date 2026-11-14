@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#080e0c" />
+    <meta name="theme-color" content="#0c0b10" />
     <meta
       name="description"
       content="PULSE 心跳声场。探索原创电子音乐，弹奏自己的旋律，让音符与光跟随每一次心跳。"
@@ -11,12 +11,14 @@
     <title>PULSE · 心跳声场</title>
     <link
       rel="icon"
-      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23101210'/%3E%3Cpath d='M13 33h9l5-16 9 31 5-15h10' stroke='%23ceff57' stroke-width='5' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%230c0b10'/%3E%3Cpath d='M13 33h9l5-16 9 31 5-15h10' stroke='%23d6d3e3' stroke-width='5' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E"
     />
     <link rel="stylesheet" href="assets/fonts/fonts.css?v=2.1.0" />
-    <link rel="stylesheet" href="styles.css?v=2.2.0" />
+    <link rel="stylesheet" href="styles.css?v=2.3.0" />
+    <link rel="stylesheet" href="foil.css?v=2.3.0" />
     <script src="audio-engine.js?v=2.1.0" defer></script>
-    <script src="app.js?v=2.2.0" defer></script>
+    <script src="foil-engine.js?v=2.3.0" defer></script>
+    <script src="app.js?v=2.3.0" defer></script>
   </head>
   <body>
     <svg
@@ -116,28 +118,49 @@
     </svg>
     <canvas id="music-visualizer" aria-hidden="true"></canvas>
     <canvas id="particles" aria-hidden="true"></canvas>
+    <span id="note-cursor" aria-hidden="true">♪</span>
     <aside class="sidebar" aria-label="主导航">
-      <a class="brand" href="#" aria-label="PULSE 首页"
+      <a
+        class="brand foil-text"
+        data-foil="text"
+        href="#"
+        aria-label="PULSE 首页"
         ><span class="brand-mark"><i></i><i></i><i></i><i></i></span
         ><span>PULSE<span class="brand-dot">.</span></span></a
       >
       <nav class="main-nav">
         <button
           class="nav-item active"
+          data-foil="foil"
           data-view="discover"
           aria-label="发现音乐"
         >
           <svg><use href="#i-discover" /></svg><span>发现音乐</span
           ><span class="nav-active-dot"></span>
         </button>
-        <button class="nav-item" data-view="favorites" aria-label="我的收藏">
+        <button
+          class="nav-item"
+          data-foil="foil"
+          data-view="favorites"
+          aria-label="我的收藏"
+        >
           <svg><use href="#i-heart" /></svg><span>我的收藏</span
           ><span class="count" id="favorite-count">0</span>
         </button>
-        <button class="nav-item" data-view="library" aria-label="音乐资料库">
+        <button
+          class="nav-item"
+          data-foil="foil"
+          data-view="library"
+          aria-label="音乐资料库"
+        >
           <svg><use href="#i-library" /></svg><span>音乐资料库</span>
         </button>
-        <button class="nav-item" data-view="studio" aria-label="节拍实验室">
+        <button
+          class="nav-item"
+          data-foil="foil"
+          data-view="studio"
+          aria-label="节拍实验室"
+        >
           <svg><use href="#i-sliders" /></svg><span>节拍实验室</span>
         </button>
       </nav>
@@ -174,7 +197,11 @@
     </aside>
     <div class="main-shell">
       <header class="topbar">
-        <a class="mobile-brand" href="#" aria-label="PULSE 首页"
+        <a
+          class="mobile-brand foil-text"
+          data-foil="text"
+          href="#"
+          aria-label="PULSE 首页"
           >PULSE<span>.</span></a
         >
         <div class="breadcrumb">
@@ -206,7 +233,7 @@
             <img
               id="hero-image"
               src="assets/headphones.webp"
-              alt="电光绿灯光下悬浮的金属耳机"
+              alt="银光下的金属耳机"
               fetchpriority="high"
               width="1536"
               height="1024"
@@ -215,11 +242,23 @@
           </div>
           <canvas id="hero-waveform" aria-hidden="true"></canvas>
           <div class="hero-copy">
-            <h1 id="hero-title" class="electric-heading">
-              让心跳<br />跟上<span class="electric-word">节拍</span>
+            <h1
+              id="hero-title"
+              class="electric-heading foil-text"
+              data-foil="text"
+            >
+              让心跳<br />跟上<span
+                class="electric-word foil-text"
+                data-foil="text"
+                >节拍</span
+              >
             </h1>
             <div class="hero-actions">
-              <button class="button-primary" id="hero-play">
+              <button
+                class="button-primary foil light"
+                data-foil="foil"
+                id="hero-play"
+              >
                 <svg><use href="#i-play" /></svg><span>即刻开听</span></button
               ><button class="button-text" id="hero-immersive">
                 进入沉浸声场<svg><use href="#i-arrow" /></svg>
@@ -227,21 +266,24 @@
             </div>
           </div>
           <button
-            class="hero-note note-one"
+            class="hero-note note-one foil-text"
+            data-foil="text"
             data-note="0"
             aria-label="弹奏 C 音"
           >
             ♪
           </button>
           <button
-            class="hero-note note-two"
+            class="hero-note note-two foil-text"
+            data-foil="text"
             data-note="2"
             aria-label="弹奏 E 音"
           >
             ♫
           </button>
           <button
-            class="hero-note note-three"
+            class="hero-note note-three foil-text"
+            data-foil="text"
             data-note="4"
             aria-label="弹奏 A 音"
           >
@@ -269,14 +311,27 @@
           </div>
           <div class="filter-row" aria-label="音乐风格">
             <div class="filter-chips" role="group" aria-label="按风格筛选">
-              <button class="filter-chip active" data-filter="all">
+              <button
+                class="filter-chip active"
+                data-foil="foil"
+                data-filter="all"
+              >
                 为你精选</button
-              ><button class="filter-chip" data-filter="electronic">
+              ><button
+                class="filter-chip"
+                data-foil="foil"
+                data-filter="electronic"
+              >
                 电子浪潮</button
-              ><button class="filter-chip" data-filter="ambient">
+              ><button
+                class="filter-chip"
+                data-foil="foil"
+                data-filter="ambient"
+              >
                 氛围漫游</button
-              ><button class="filter-chip" data-filter="lofi">Lo-fi 时刻</button
-              ><button class="filter-chip" data-filter="house">
+              ><button class="filter-chip" data-foil="foil" data-filter="lofi">
+                Lo-fi 时刻</button
+              ><button class="filter-chip" data-foil="foil" data-filter="house">
                 律动 House
               </button>
             </div>
@@ -286,7 +341,11 @@
             <svg><use href="#i-headphones" /></svg>
             <h3>留一点空间给好音乐</h3>
             <p id="empty-message">点击音乐旁的爱心，收藏你的心动频率。</p>
-            <button class="button-primary" id="reset-filter">
+            <button
+              class="button-primary foil light"
+              data-foil="foil"
+              id="reset-filter"
+            >
               发现更多音乐<svg><use href="#i-arrow" /></svg>
             </button>
           </div>
@@ -298,56 +357,70 @@
           aria-labelledby="studio-title"
         >
           <div class="studio-intro">
-            <h2 id="studio-title" class="electric-heading">
-              你的指尖<br />也有<span class="electric-word">节拍</span>
+            <h2
+              id="studio-title"
+              class="electric-heading foil-text"
+              data-foil="text"
+            >
+              你的指尖<br />也有<span
+                class="electric-word foil-text"
+                data-foil="text"
+                >节拍</span
+              >
             </h2>
           </div>
           <div class="pads-wrap">
             <div class="pads" id="pads">
               <button
-                class="music-pad"
+                class="music-pad foil light"
+                data-foil="foil"
                 data-note="0"
-                style="--pad-color: #c8ff68"
+                style="--pad-color: #d6d3e3"
               >
                 <span class="pad-note">C</span><span class="pad-key">A</span
                 ><span class="pad-wave"></span>
               </button>
               <button
-                class="music-pad"
+                class="music-pad foil light"
+                data-foil="foil"
                 data-note="1"
-                style="--pad-color: #bbff8b"
+                style="--pad-color: #d6d3e3"
               >
                 <span class="pad-note">D</span><span class="pad-key">S</span
                 ><span class="pad-wave"></span>
               </button>
               <button
-                class="music-pad"
+                class="music-pad foil light"
+                data-foil="foil"
                 data-note="2"
-                style="--pad-color: #a6fcb0"
+                style="--pad-color: #d6d3e3"
               >
                 <span class="pad-note">E</span><span class="pad-key">D</span
                 ><span class="pad-wave"></span>
               </button>
               <button
-                class="music-pad"
+                class="music-pad foil light"
+                data-foil="foil"
                 data-note="3"
-                style="--pad-color: #8df5c8"
+                style="--pad-color: #d6d3e3"
               >
                 <span class="pad-note">G</span><span class="pad-key">F</span
                 ><span class="pad-wave"></span>
               </button>
               <button
-                class="music-pad"
+                class="music-pad foil light"
+                data-foil="foil"
                 data-note="4"
-                style="--pad-color: #79eed9"
+                style="--pad-color: #d6d3e3"
               >
                 <span class="pad-note">A</span><span class="pad-key">G</span
                 ><span class="pad-wave"></span>
               </button>
               <button
-                class="music-pad"
+                class="music-pad foil light"
+                data-foil="foil"
                 data-note="5"
-                style="--pad-color: #72e4e3"
+                style="--pad-color: #d6d3e3"
               >
                 <span class="pad-note">C</span><span class="pad-key">H</span
                 ><span class="pad-wave"></span>
@@ -361,7 +434,8 @@
           </div>
         </section>
         <footer class="page-footer">
-          <a class="footer-brand" href="#">PULSE<span>.</span></a
+          <a class="footer-brand foil-text" data-foil="text" href="#"
+            >PULSE<span>.</span></a
           ><span class="keyboard-hint"><kbd>Space</kbd> 播放 / 暂停</span>
         </footer>
       </main>
@@ -402,7 +476,12 @@
             <svg><use href="#i-shuffle" /></svg></button
           ><button class="icon-button" id="previous" aria-label="上一首">
             <svg><use href="#i-prev" /></svg></button
-          ><button class="play-button" id="play" aria-label="播放">
+          ><button
+            class="play-button foil-seal"
+            data-foil="seal"
+            id="play"
+            aria-label="播放"
+          >
             <svg><use href="#i-play" /></svg></button
           ><button class="icon-button" id="next" aria-label="下一首">
             <svg><use href="#i-next" /></svg></button
@@ -467,7 +546,8 @@
     <dialog class="immersive" id="immersive" aria-labelledby="immersive-title">
       <canvas id="soundscape" aria-hidden="true"></canvas>
       <div class="immersive-top">
-        <a class="footer-brand" href="#">PULSE<span>.</span></a
+        <a class="footer-brand foil-text" data-foil="text" href="#"
+          >PULSE<span>.</span></a
         ><button
           class="icon-button"
           id="immersive-close"
@@ -478,12 +558,13 @@
       </div>
       <div class="immersive-center">
         <div class="sound-orb" aria-hidden="true">
-          <div class="orb-core">♪</div>
+          <div class="orb-core foil-text" data-foil="text">♪</div>
         </div>
         <h2 id="immersive-title">Neon Afterglow</h2>
         <p id="immersive-style">PULSE ORIGINAL · 电子浪潮</p>
         <button
-          class="play-button immersive-play"
+          class="play-button immersive-play foil-seal"
+          data-foil="seal"
           id="immersive-play"
           aria-label="播放"
         >

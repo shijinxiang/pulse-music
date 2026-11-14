@@ -58,9 +58,7 @@ const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 const icon = (name) => `<svg aria-hidden="true"><use href="#i-${name}"/></svg>`;
 const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
-const finePointerPreference = window.matchMedia(
-  "(hover: hover) and (pointer: fine)",
-);
+const foil = new PulseFoil();
 
 function readPreference(key, fallback) {
   try {
@@ -152,13 +150,13 @@ function renderTracks() {
   $("#track-grid").innerHTML = filtered
     .map((track) => {
       const liked = state.favorites.has(track.id);
-      return `<article class="track-card${audio.playing && track.id === state.currentId ? " playing" : ""}" data-track="${track.id}">
+      return `<article class="track-card foil light${audio.playing && track.id === state.currentId ? " playing" : ""}" data-foil="foil" data-track="${track.id}">
       <div class="cover-wrap">
         <div class="cover-image album-art art-${track.art}" role="img" aria-label="${escapeText(track.title)} 专辑封面"></div>
         <div class="cover-shade"></div>
         <span class="cover-title">${escapeText(track.coverTitle)}</span>
         <button class="cover-select" data-play="${track.id}" aria-label="播放 ${escapeText(track.title)}"></button>
-        <span class="cover-play" aria-hidden="true">${icon("play")}</span>
+        <span class="cover-play foil-seal" data-foil="seal" aria-hidden="true">${icon("play")}</span>
       </div>
       <div class="track-info-row"><h3 class="track-name"><button class="track-title-button" data-play="${track.id}">${escapeText(track.title)}</button></h3><button class="icon-button like-button" data-like="${track.id}" aria-label="${liked ? "取消收藏" : "收藏"} ${escapeText(track.title)}" aria-pressed="${liked}">${icon("heart")}</button></div>
       <div class="track-meta"><span class="track-meta-left">${escapeText(track.style)}</span><span class="track-bpm">${track.local ? formatTime(track.duration) : `${track.bpm} BPM`}</span></div>
@@ -174,6 +172,7 @@ function renderTracks() {
       : "点击音乐旁的爱心，收藏你的心动频率。";
   updateCardPlayback();
   updateFavoriteCount();
+  foil.invalidate();
 }
 
 function updateCardPlayback() {
@@ -207,6 +206,7 @@ function renderQueue() {
         `<button class="queue-row${track.id === state.currentId ? " current" : ""}" data-play="${track.id}" aria-label="播放 ${escapeText(track.title)}"><span class="queue-art album-art art-${track.art}"></span><span class="queue-details"><strong>${escapeText(track.title)}</strong><small>${escapeText(track.style)} · ${formatTime(track.duration)}</small></span>${icon(track.id === state.currentId && audio.playing ? "pause" : "play")}</button>`,
     )
     .join("");
+  foil.invalidate();
 }
 
 function setView(view, collection = null) {
@@ -496,6 +496,7 @@ document.addEventListener("click", (event) => {
 
 function updateEffects() {
   document.body.classList.toggle("motion-off", !state.effects);
+  foil.setEnabled(state.effects);
   $("#effects-toggle").setAttribute("aria-pressed", String(state.effects));
   $("#effects-toggle").setAttribute(
     "aria-label",
@@ -508,7 +509,6 @@ function updateEffects() {
     particles.length = 0;
     rings.length = 0;
     trailPointer = null;
-    clearSpotlight();
     $("#hero-image").style.transform = "";
     $(".sound-orb").style.setProperty("--orb-scale", 1);
   }
@@ -539,8 +539,12 @@ async function playNote(index, target) {
   }
   const pad = $(`.music-pad[data-note="${index}"]`);
   pad.classList.add("pressed");
+  foil.invalidate();
   clearTimeout(pad.releaseTimer);
-  pad.releaseTimer = setTimeout(() => pad.classList.remove("pressed"), 260);
+  pad.releaseTimer = setTimeout(() => {
+    pad.classList.remove("pressed");
+    foil.invalidate();
+  }, 260);
   const rectangle = (target || pad).getBoundingClientRect();
   burst(
     rectangle.x + rectangle.width / 2,
@@ -681,14 +685,6 @@ const noteColors = [
 ];
 let trailPointer = null;
 let trailColor = 0;
-let highlightedSurface = null;
-let pendingSpotlight = null;
-
-function clearSpotlight() {
-  highlightedSurface?.classList.remove("is-lit");
-  highlightedSurface = null;
-  pendingSpotlight = null;
-}
 const starfield = Array.from({ length: 85 }, () => ({
   x: Math.random(),
   y: Math.random(),
@@ -704,6 +700,7 @@ let lastPointerNote = 0;
 let backgroundRing = { x: 0, y: 0, radius: 0 };
 
 function resizeCanvas() {
+  foil.invalidate();
   width = window.innerWidth;
   height = window.innerHeight;
   pixelRatio = Math.min(window.devicePixelRatio || 1, 1.75);
@@ -751,7 +748,7 @@ function drawHeroWaveform(levels) {
   heroWaveContext.clearRect(0, 0, heroWaveWidth, heroWaveHeight);
   if (!state.effects || !levels.waveform || levels.energy < 0.005) return;
   heroWaveContext.beginPath();
-  heroWaveContext.strokeStyle = "#ceff57";
+  heroWaveContext.strokeStyle = "#d6d3e3";
   heroWaveContext.lineWidth = 1;
   const samples = levels.waveform;
   for (let index = 0; index < samples.length; index += 1) {
@@ -765,7 +762,7 @@ function drawHeroWaveform(levels) {
   heroWaveContext.stroke();
 }
 
-function burst(x, y, intensity = 1, color = "#ceff57") {
+function burst(x, y, intensity = 1, color = "#d6d3e3") {
   if (!state.effects) return;
   if (!x && !y) {
     x = width / 2;
@@ -800,17 +797,6 @@ document.addEventListener(
   "pointermove",
   (event) => {
     if (!state.effects || event.pointerType === "touch") return;
-    const surface = finePointerPreference.matches
-      ? event.target.closest(".track-card, .music-pad")
-      : null;
-    if (highlightedSurface !== surface) {
-      highlightedSurface?.classList.remove("is-lit");
-      highlightedSurface = surface;
-      highlightedSurface?.classList.add("is-lit");
-    }
-    pendingSpotlight = surface
-      ? { surface, x: event.clientX, y: event.clientY }
-      : null;
     const now = performance.now();
     const previous = trailPointer;
     const distance = previous
@@ -851,11 +837,9 @@ document.addEventListener(
 
 window.addEventListener("blur", () => {
   trailPointer = null;
-  clearSpotlight();
 });
 document.addEventListener("pointerleave", () => {
   trailPointer = null;
-  clearSpotlight();
 });
 
 function drawParticles(target) {
@@ -956,8 +940,8 @@ function drawSoundscape(time, levels) {
     orb.y,
     Math.max(width, height) * 0.65,
   );
-  glow.addColorStop(0, `rgba(119,175,35,${0.08 + levels.energy * 0.13})`);
-  glow.addColorStop(0.5, "rgba(40,70,13,0.025)");
+  glow.addColorStop(0, `rgba(136,129,168,${0.08 + levels.energy * 0.13})`);
+  glow.addColorStop(0.5, "rgba(65,57,80,0.025)");
   glow.addColorStop(1, "rgba(0,0,0,0)");
   scene.fillStyle = glow;
   scene.fillRect(0, 0, width, height);
@@ -966,7 +950,7 @@ function drawSoundscape(time, levels) {
     const x =
       (star.x * width + Math.sin(motion + star.phase) * 16 + width) % width;
     const y = (star.y * height - motion * 9 + height * 10) % height;
-    scene.fillStyle = `rgba(195,230,152,${0.12 + (Math.sin(motion * 2 + star.phase) + 1) * 0.12})`;
+    scene.fillStyle = `rgba(210,207,227,${0.12 + (Math.sin(motion * 2 + star.phase) + 1) * 0.12})`;
     scene.beginPath();
     scene.arc(x, y, star.size, 0, Math.PI * 2);
     scene.fill();
@@ -990,9 +974,9 @@ function drawFrequencyRing(target, x, y, radius, levels) {
     y,
     radius * 1.4,
   );
-  glow.addColorStop(0, "rgba(139,207,65,0)");
-  glow.addColorStop(0.65, `rgba(153,225,66,${0.018 + energy * 0.045})`);
-  glow.addColorStop(1, "rgba(139,207,65,0)");
+  glow.addColorStop(0, "rgba(189,184,211,0)");
+  glow.addColorStop(0.65, `rgba(189,184,211,${0.018 + energy * 0.045})`);
+  glow.addColorStop(1, "rgba(189,184,211,0)");
   target.fillStyle = glow;
   target.fillRect(
     x - radius * 1.4,
@@ -1001,11 +985,11 @@ function drawFrequencyRing(target, x, y, radius, levels) {
     radius * 2.8,
   );
   target.lineWidth = 1;
-  target.strokeStyle = `rgba(190,239,122,${0.1 + energy * 0.13})`;
+  target.strokeStyle = `rgba(198,194,214,${0.1 + energy * 0.13})`;
   target.beginPath();
   target.arc(x, y, innerRadius - 12, 0, Math.PI * 2);
   target.stroke();
-  target.strokeStyle = `rgba(198,249,139,${0.15 + energy * 0.22})`;
+  target.strokeStyle = `rgba(216,211,230,${0.15 + energy * 0.22})`;
   target.beginPath();
   target.arc(x, y, innerRadius, 0, Math.PI * 2);
   target.stroke();
@@ -1021,7 +1005,12 @@ function drawFrequencyRing(target, x, y, radius, levels) {
     const sine = Math.sin(angle);
     const start = innerRadius + 7;
     const length = 2 + Math.pow(amplitude, 1.4) * radius * 0.3;
-    target.strokeStyle = `hsla(${82 + bandIndex * 1.5},85%,72%,${0.18 + amplitude * 0.68})`;
+    const color = foil.colorAt(
+      x + cosine * innerRadius,
+      y + sine * innerRadius,
+    );
+    const silver = color.map((channel) => Math.round(130 + channel * 0.42));
+    target.strokeStyle = `rgba(${silver.join(",")},${0.18 + amplitude * 0.68})`;
     target.beginPath();
     target.moveTo(x + cosine * start, y + sine * start);
     target.lineTo(x + cosine * (start + length), y + sine * (start + length));
@@ -1035,15 +1024,7 @@ let lastUiFrame = 0;
 function animate(time) {
   const delta = Math.min((time - previousFrame) / 16.67, 2);
   previousFrame = time;
-  if (pendingSpotlight) {
-    const { surface, x, y } = pendingSpotlight;
-    if (surface.isConnected) {
-      const rectangle = surface.getBoundingClientRect();
-      surface.style.setProperty("--light-x", `${x - rectangle.left}px`);
-      surface.style.setProperty("--light-y", `${y - rectangle.top}px`);
-    }
-    pendingSpotlight = null;
-  }
+  foil.update();
   context.clearRect(0, 0, width, height);
   for (let index = particles.length - 1; index >= 0; index -= 1) {
     const particle = particles[index];
