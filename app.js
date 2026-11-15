@@ -59,6 +59,8 @@ const $$ = (selector) => [...document.querySelectorAll(selector)];
 const icon = (name) => `<svg aria-hidden="true"><use href="#i-${name}"/></svg>`;
 const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
 const foil = new PulseFoil();
+const padMaterials = new PulsePadMaterials();
+const padButtons = $$(".music-pad");
 const heroScene = new PulseHeroScene($("#hero-scene"), $("#hero-image"));
 
 function readPreference(key, fallback) {
@@ -553,13 +555,14 @@ $("#reverb-toggle").addEventListener("click", () => {
 });
 
 async function playNote(index, target) {
+  const pad = padButtons.find((button) => Number(button.dataset.note) === index);
+  if (!pad) return;
   try {
     await audio.playPad(index);
   } catch (error) {
     toast(error.message);
     return;
   }
-  const pad = $(`.music-pad[data-note="${index}"]`);
   pad.classList.add("pressed");
   foil.invalidate();
   clearTimeout(pad.releaseTimer);
@@ -605,8 +608,8 @@ document.addEventListener("keydown", (event) => {
     $("#search").focus();
     return;
   }
-  const index = ["a", "s", "d", "f", "g", "h"].indexOf(event.key.toLowerCase());
-  if (index !== -1 && !event.repeat) playNote(index);
+  const pad = padButtons.find((button) => button.dataset.key === event.key.toLowerCase());
+  if (pad && !event.repeat) playNote(Number(pad.dataset.note));
   if (event.key === "Escape") toggleQueue(false);
 });
 
@@ -933,12 +936,17 @@ $(".immersive-top .footer-brand").addEventListener("click", (event) => {
   $("#immersive").close();
   setView("discover");
 });
+function padIndexAt(clientX) {
+  return Math.max(0, Math.min(audio.padNotes.length - 1,
+    Math.floor(clientX / width * audio.padNotes.length)));
+}
+
 $("#immersive").addEventListener("pointerdown", (event) => {
   if (event.target.closest("button, a")) return;
   pointerDown = true;
   burst(event.clientX, event.clientY, 1.3);
   audio
-    .playPad(Math.min(5, Math.floor((event.clientX / width) * 6)))
+    .playPad(padIndexAt(event.clientX))
     .catch((error) => toast(error.message));
 });
 document.addEventListener("pointerup", () => {
@@ -953,7 +961,7 @@ $("#immersive").addEventListener("pointermove", (event) => {
   if (performance.now() - lastPointerNote > 180) {
     lastPointerNote = performance.now();
     audio
-      .playPad(Math.min(5, Math.floor((event.clientX / width) * 6)))
+      .playPad(padIndexAt(event.clientX))
       .catch((error) => toast(error.message));
   }
 });
@@ -1056,6 +1064,7 @@ function animate(time) {
   const levels = audio.getLevels();
   if ($("#immersive").open) drawSoundscape(time, levels);
   else {
+    padMaterials.render(foil, time);
     if (heroVisible)
       heroScene.render(time, levels, state.effects && !motionPreference.matches);
     nebula.render(time, levels, state.effects && !motionPreference.matches);
@@ -1085,6 +1094,7 @@ function animate(time) {
 window.addEventListener("pagehide", (event) => {
   if (event.persisted) return;
   audio.dispose();
+  padMaterials.dispose();
   nebula.dispose();
   immersiveNebula.dispose();
   fileUrls.forEach((url) => URL.revokeObjectURL(url));

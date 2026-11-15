@@ -2,6 +2,7 @@
 class PulseAudio {
   constructor() {
     this.context = null;
+    this.padNotes = [60, 62, 64, 65, 67, 69, 71, 72];
     this.track = null;
     this.playing = false;
     this.offset = 0;
@@ -424,12 +425,13 @@ class PulseAudio {
   }
 
   async playPad(index) {
+    const note = this.padNotes[index];
+    if (!Number.isFinite(note)) return;
     await this.initialize();
-    const notes = [60, 62, 64, 67, 69, 72];
     const time = this.context.currentTime + 0.005;
-    this.tone(notes[index], time, 1.6, 0.25, "sine", this.padBus, false);
+    this.tone(note, time, 1.6, 0.25, "sine", this.padBus, false);
     this.tone(
-      notes[index] + 12,
+      note + 12,
       time,
       0.8,
       0.065,

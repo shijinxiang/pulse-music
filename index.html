@@ -14,13 +14,14 @@
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%230c0b10'/%3E%3Cpath d='M13 33h9l5-16 9 31 5-15h10' stroke='%23d6d3e3' stroke-width='5' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E"
     />
     <link rel="stylesheet" href="assets/fonts/fonts.css?v=2.1.0" />
-    <link rel="stylesheet" href="styles.css?v=2.3.0" />
-    <link rel="stylesheet" href="foil.css?v=2.6.0" />
-    <script src="audio-engine.js?v=2.1.0" defer></script>
+    <link rel="stylesheet" href="styles.css?v=2.7.0" />
+    <link rel="stylesheet" href="foil.css?v=2.7.0" />
+    <script src="audio-engine.js?v=2.7.0" defer></script>
     <script src="foil-engine.js?v=2.4.0" defer></script>
+    <script src="pad-materials.js?v=2.7.0" defer></script>
     <script src="hero-scene.js?v=2.6.0" defer></script>
     <script src="nebula-field.js?v=2.6.0" defer></script>
-    <script src="app.js?v=2.6.0" defer></script>
+    <script src="app.js?v=2.7.0" defer></script>
   </head>
   <body>
     <svg
@@ -260,7 +261,7 @@
           <button
             class="hero-note note-three foil-text"
             data-foil="text"
-            data-note="4"
+            data-note="5"
             aria-label="弹奏 A 音"
           >
             ♩
@@ -332,58 +333,140 @@
           <div class="pads-wrap">
             <div class="pads" id="pads">
               <button
-                class="music-pad material-brushed"
+                class="music-pad foil light"
                 data-foil="foil"
                 data-note="0"
-                style="--pad-color: #d6d3e3"
+                data-key="a"
+                data-material="film"
+                data-material-light="1"
+                data-material-angle="30"
+                aria-label="弹奏 C4，彩虹膜，快捷键 A"
+                aria-keyshortcuts="A"
+                title="彩虹膜"
+                style="--pad-color: #eab8ef"
               >
-                <span class="pad-note">C</span><span class="pad-key">A</span
-                ><span class="pad-wave"></span>
+                <span class="pad-note">C</span>
+                <kbd class="pad-key">A</kbd>
+                <span class="pad-wave" aria-hidden="true"></span>
               </button>
               <button
                 class="music-pad material-brushed"
                 data-foil="foil"
                 data-note="1"
-                style="--pad-color: #d6d3e3"
+                data-key="s"
+                data-material="straight"
+                data-material-light="1"
+                data-material-angle="66"
+                aria-label="弹奏 D4，拉丝，快捷键 S"
+                aria-keyshortcuts="S"
+                title="拉丝"
+                style="--pad-color: #cdd7ec"
               >
-                <span class="pad-note">D</span><span class="pad-key">S</span
-                ><span class="pad-wave"></span>
+                <span class="pad-note">D</span>
+                <kbd class="pad-key">S</kbd>
+                <span class="pad-wave" aria-hidden="true"></span>
               </button>
               <button
-                class="music-pad material-brushed"
-                data-foil="foil"
+                class="music-pad foil-seal"
+                data-foil="seal"
                 data-note="2"
-                style="--pad-color: #d6d3e3"
+                data-key="d"
+                data-material="star"
+                data-material-light="1"
+                data-material-angle="30"
+                aria-label="弹奏 E4，星芒，快捷键 D"
+                aria-keyshortcuts="D"
+                title="星芒"
+                style="--pad-color: #f1bddc"
               >
-                <span class="pad-note">E</span><span class="pad-key">D</span
-                ><span class="pad-wave"></span>
+                <span class="pad-note">E</span>
+                <kbd class="pad-key">D</kbd>
+                <span class="pad-wave" aria-hidden="true"></span>
               </button>
               <button
-                class="music-pad material-brushed"
-                data-foil="foil"
+                class="music-pad pad-dark"
+                data-foil="glitter"
                 data-note="3"
-                style="--pad-color: #d6d3e3"
+                data-key="f"
+                data-material="glitter"
+                data-material-light="0"
+                data-material-angle="30"
+                aria-label="弹奏 F4，碎钻，快捷键 F"
+                aria-keyshortcuts="F"
+                title="碎钻"
+                style="--pad-color: #dcc6f6"
               >
-                <span class="pad-note">G</span
-                ><span class="pad-key">F</span><span class="pad-wave"></span>
+                <span class="pad-note">F</span>
+                <kbd class="pad-key">F</kbd>
+                <span class="pad-wave" aria-hidden="true"></span>
               </button>
               <button
-                class="music-pad material-brushed"
+                class="music-pad pad-dark"
                 data-foil="foil"
                 data-note="4"
-                style="--pad-color: #d6d3e3"
+                data-key="g"
+                data-material="dots"
+                data-material-light="0"
+                data-material-angle="30"
+                aria-label="弹奏 G4，点阵，快捷键 G"
+                aria-keyshortcuts="G"
+                title="点阵"
+                style="--pad-color: #b8e4ed"
               >
-                <span class="pad-note">A</span><span class="pad-key">G</span
-                ><span class="pad-wave"></span>
+                <span class="pad-note">G</span>
+                <kbd class="pad-key">G</kbd>
+                <span class="pad-wave" aria-hidden="true"></span>
               </button>
               <button
-                class="music-pad material-brushed"
+                class="music-pad"
                 data-foil="foil"
                 data-note="5"
-                style="--pad-color: #d6d3e3"
+                data-key="h"
+                data-material="ice"
+                data-material-light="1"
+                data-material-angle="30"
+                aria-label="弹奏 A4，碎冰，快捷键 H"
+                aria-keyshortcuts="H"
+                title="碎冰"
+                style="--pad-color: #c1dded"
               >
-                <span class="pad-note">C</span><span class="pad-key">H</span
-                ><span class="pad-wave"></span>
+                <span class="pad-note">A</span>
+                <kbd class="pad-key">H</kbd>
+                <span class="pad-wave" aria-hidden="true"></span>
+              </button>
+              <button
+                class="music-pad pad-dark"
+                data-foil="foil"
+                data-note="6"
+                data-key="j"
+                data-material="pillar"
+                data-material-light="0"
+                data-material-angle="30"
+                aria-label="弹奏 B4，光柱，快捷键 J"
+                aria-keyshortcuts="J"
+                title="光柱"
+                style="--pad-color: #e9d2ac"
+              >
+                <span class="pad-note">B</span>
+                <kbd class="pad-key">J</kbd>
+                <span class="pad-wave" aria-hidden="true"></span>
+              </button>
+              <button
+                class="music-pad pad-dark"
+                data-foil="foil"
+                data-note="7"
+                data-key="k"
+                data-material="ripple"
+                data-material-light="0"
+                data-material-angle="30"
+                aria-label="弹奏 C5，波纹，快捷键 K"
+                aria-keyshortcuts="K"
+                title="波纹"
+                style="--pad-color: #edbfd7"
+              >
+                <span class="pad-note">C5</span>
+                <kbd class="pad-key">K</kbd>
+                <span class="pad-wave" aria-hidden="true"></span>
               </button>
             </div>
             <div class="pad-bottomline">
