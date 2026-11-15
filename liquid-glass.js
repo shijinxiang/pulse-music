@@ -54,14 +54,15 @@ class PulseLiquidGlass {
       return;
     }
     const radius = Math.min(parseFloat(getComputedStyle(control).borderTopLeftRadius) || 24, width / 2, height / 2);
-    const key = `${width}:${height}:${Math.round(radius)}`;
-    if (!this.maps.has(key)) this.maps.set(key, this.makeFilter(width, height, radius));
+    const blur = control.matches(".sidebar, .player, .topbar, .queue-panel") ? 3 : 0.65;
+    const key = `${width}:${height}:${Math.round(radius)}:${blur}`;
+    if (!this.maps.has(key)) this.maps.set(key, this.makeFilter(width, height, radius, blur));
     const filter = this.maps.get(key);
     control.dataset.glassMap = key;
     control.style.setProperty("--glass-filter", `url("#${filter.id}")`);
   }
 
-  makeFilter(width, height, radius) {
+  makeFilter(width, height, radius, blurRadius) {
     // Snell refraction through a rounded rim, with a neutral, undistorted center.
     const rim = Math.min(20, height * 0.3, radius * 0.7);
     const thickness = Math.min(12, height * 0.24);
@@ -122,7 +123,7 @@ class PulseLiquidGlass {
     const texture = document.createElementNS(this.definitions.namespaceURI, "feImage");
     setAttributes(texture, { x: "0", y: "0", width, height, preserveAspectRatio: "none", href: canvas.toDataURL(), result: "rim" });
     const blur = document.createElementNS(this.definitions.namespaceURI, "feGaussianBlur");
-    setAttributes(blur, { in: "SourceGraphic", stdDeviation: "0.65", result: "scene" });
+    setAttributes(blur, { in: "SourceGraphic", stdDeviation: blurRadius, result: "scene" });
     const displacement = document.createElementNS(this.definitions.namespaceURI, "feDisplacementMap");
     setAttributes(displacement, { in: "scene", in2: "rim", scale: maxShift * 2, xChannelSelector: "R", yChannelSelector: "G" });
     filter.append(texture, blur, displacement);

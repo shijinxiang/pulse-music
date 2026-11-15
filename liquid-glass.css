@@ -86,8 +86,9 @@ button.liquid-glass:disabled {
   border-color: #ffffff2e;
   box-shadow: 0 12px 36px #0005, inset 0 1px 0 #ffffff1c;
 }
+.sidebar.liquid-glass::before,
 .player.liquid-glass::before {
-  background: linear-gradient(135deg, #17223052, #090e184d);
+  background: linear-gradient(135deg, #172230c9, #090e18b3);
 }
 .nav-item.liquid-glass,
 .collection-link.liquid-glass,
