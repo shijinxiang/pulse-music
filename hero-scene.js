@@ -26,8 +26,8 @@ class PulseHeroScene {
       [135, 167, 255],
       [199, 151, 255],
     ];
-    this.cloudRing = this.makeCloudRing(this.makeCloudTexture());
-    this.cloudMist = this.makeCloudMist(this.cloudRing);
+    this.cloudDisc = this.makeCloudDisc(this.makeCloudTexture());
+    this.cloudMist = this.makeCloudMist(this.cloudDisc);
     this.observer = new ResizeObserver(() => this.resize());
     this.observer.observe(this.container);
     image.addEventListener("load", () => this.resize());
@@ -187,10 +187,9 @@ class PulseHeroScene {
     this.needsFrame = true;
   }
 
-  makeCloudRing(texture) {
+  makeCloudDisc(texture) {
     const size = 1024;
-    const radius = 360;
-    const band = 250;
+    const radius = 485;
     const source = texture
       .getContext("2d")
       .getImageData(0, 0, texture.width, texture.height);
@@ -199,22 +198,42 @@ class PulseHeroScene {
     canvas.width = canvas.height = size;
     const context = canvas.getContext("2d");
     const pixels = context.createImageData(size, size);
+    const centerColor = [190, 194, 232];
     for (let y = 0; y < size; y += 1) {
       for (let x = 0; x < size; x += 1) {
         const dx = x - size / 2,
           dy = y - size / 2;
         const distance = Math.hypot(dx, dy);
-        const v = 0.5 + (distance - radius) / band;
-        if (v <= 0 || v >= 1) continue;
-        const u = (Math.atan2(dy, dx) / (Math.PI * 2) + 1) % 1;
+        const radial = distance / radius;
+        if (radial >= 1) continue;
+        const v = 0.2 + radial * 0.6;
+        const u = (Math.atan2(dy, dx) / (Math.PI * 2) + 1 + radial * 0.11) % 1;
         const sx = Math.min(period - 1, Math.floor(u * period));
         const sy = Math.min(texture.height - 1, Math.floor(v * texture.height));
         const sourceIndex = (sy * texture.width + sx) * 4;
         const destination = (y * size + x) * 4;
-        pixels.data[destination] = source.data[sourceIndex];
-        pixels.data[destination + 1] = source.data[sourceIndex + 1];
-        pixels.data[destination + 2] = source.data[sourceIndex + 2];
-        pixels.data[destination + 3] = source.data[sourceIndex + 3];
+        const colorWeight = Math.min(1, radial * 3);
+        const colorPosition = u * this.colors.length;
+        const firstColor = Math.floor(colorPosition);
+        const fraction = colorPosition - firstColor;
+        const blend = fraction * fraction * (3 - 2 * fraction);
+        const a = this.colors[firstColor];
+        const b = this.colors[(firstColor + 1) % this.colors.length];
+        // Rebuild color separately from density because transparent samples lose RGB.
+        for (let channel = 0; channel < 3; channel += 1) {
+          const color = a[channel] + (b[channel] - a[channel]) * blend;
+          pixels.data[destination + channel] = centerColor[channel] +
+            (color - centerColor[channel]) * colorWeight;
+        }
+        const edge = Math.min(1, (1 - radial) / 0.18);
+        const fade = edge * edge * (3 - 2 * edge);
+        const structure = source.data[sourceIndex + 3] / 255;
+        const grainHash = ((x * 73856093) ^ (y * 19349663)) >>> 0;
+        const grain = 0.86 + (grainHash / 4294967295) * 0.28;
+        // A continuous density floor fills the entire interior of the dust disc.
+        pixels.data[destination + 3] = Math.round(
+          (0.24 + structure * 0.72) * grain * fade * 255,
+        );
       }
     }
     context.putImageData(pixels, 0, 0);
@@ -225,35 +244,42 @@ class PulseHeroScene {
     const canvas = document.createElement("canvas");
     canvas.width = canvas.height = 1024;
     const context = canvas.getContext("2d");
-    context.filter = "blur(14px)";
+    context.filter = "blur(8px)";
     context.drawImage(texture, 0, 0);
     return canvas;
   }
 
   drawOrbit(front, energy) {
     const desktop = innerWidth > 760;
-    const radiusX = this.width * (desktop ? 0.39 : 0.37);
-    const radiusY = this.photoRect.height * 0.28;
+    const scale = 2 / 3;
+    const radiusX = this.width * (desktop ? 0.39 : 0.37) * scale;
+    const radiusY = this.photoRect.height * 0.28 * scale;
     const rotation = 0.17 + Math.sin(this.phase * 0.5) * 0.045;
-    const layers = [
-      { offset: -8, scale: 1.03, opacity: 0.17, texture: this.cloudMist },
-      { offset: 0, scale: 1, opacity: 0.3, texture: this.cloudRing },
-      { offset: 8, scale: 0.98, opacity: 0.15, texture: this.cloudMist },
+    const layers = front ? [
+      { offset: 0, scale: 1, opacity: 0.07, texture: this.cloudDisc },
+      { offset: 5, scale: 1.01, opacity: 0.04, texture: this.cloudMist },
+    ] : [
+      { offset: -5, scale: 1.03, opacity: 0.2, texture: this.cloudMist },
+      { offset: 0, scale: 1, opacity: 0.58, texture: this.cloudDisc },
+      { offset: 5, scale: 0.98, opacity: 0.15, texture: this.cloudMist },
     ];
     const context = this.context;
     for (const layer of layers) {
       context.save();
       context.globalCompositeOperation = "screen";
       context.globalAlpha = layer.opacity * (1 + energy * 0.12);
-      context.translate(this.width * (desktop ? 0.56 : 0.5), this.height * 0.55 + layer.offset);
+      context.translate(this.photoRect.x + this.photoRect.width / 2,
+        this.height * 0.55 + layer.offset);
       context.rotate(rotation);
       context.scale(
         (radiusX / 360) * layer.scale,
         (radiusY / 360) * layer.scale,
       );
-      context.beginPath();
-      context.rect(-600, front ? 0 : -600, 1200, 600);
-      context.clip();
+      if (front) {
+        context.beginPath();
+        context.rect(-600, 0, 1200, 600);
+        context.clip();
+      }
       context.rotate(-this.phase + layer.offset * 0.008);
       context.drawImage(layer.texture, -512, -512);
       context.restore();

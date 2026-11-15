@@ -114,7 +114,7 @@
   letter-spacing: -0.035em;
 }
 .hero-art img {
-  filter: grayscale(1) contrast(1.08);
+  filter: none;
 }
 #hero-title,
 #studio-title {
