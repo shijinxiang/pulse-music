@@ -117,6 +117,19 @@ class PulseHeroScene {
       canvas.height = Math.round(this.height * this.ratio);
     }
     this.context.setTransform(this.ratio, 0, 0, this.ratio, 0, 0);
+    this.edgeFadeX = this.context.createLinearGradient(0, 0, this.width, 0);
+    this.edgeFadeX.addColorStop(0, "transparent");
+    this.edgeFadeX.addColorStop(0.065, "#000");
+    this.edgeFadeX.addColorStop(0.82, "#000");
+    this.edgeFadeX.addColorStop(0.9, "rgba(0,0,0,0.65)");
+    this.edgeFadeX.addColorStop(0.96, "rgba(0,0,0,0.18)");
+    this.edgeFadeX.addColorStop(1, "transparent");
+    this.edgeFadeY = this.context.createLinearGradient(0, 0, 0, this.height);
+    this.edgeFadeY.addColorStop(0, "transparent");
+    this.edgeFadeY.addColorStop(0.04, "#000");
+    this.edgeFadeY.addColorStop(0.86, "#000");
+    this.edgeFadeY.addColorStop(0.95, "rgba(0,0,0,0.3)");
+    this.edgeFadeY.addColorStop(1, "transparent");
     const scale = Math.min(
       (this.width * (innerWidth > 760 ? 0.7 : 1)) / this.image.naturalWidth,
       this.height / this.image.naturalHeight,
@@ -139,7 +152,7 @@ class PulseHeroScene {
       height,
     );
 
-    // A display-time luminance mask keeps the refracted light on the chrome.
+    // A luminance mask keeps the refracted light on reflective surfaces.
     const metalContext = this.metal.getContext("2d", {
       willReadFrequently: true,
     });
@@ -336,6 +349,13 @@ class PulseHeroScene {
       this.drawRefraction(levels.energy);
       this.drawOrbit(true, levels.energy);
     }
+    context.restore();
+    context.save();
+    context.globalCompositeOperation = "destination-in";
+    context.fillStyle = this.edgeFadeX;
+    context.fillRect(0, 0, this.width, this.height);
+    context.fillStyle = this.edgeFadeY;
+    context.fillRect(0, 0, this.width, this.height);
     context.restore();
   }
 }

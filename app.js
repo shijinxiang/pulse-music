@@ -59,7 +59,6 @@ const $$ = (selector) => [...document.querySelectorAll(selector)];
 const icon = (name) => `<svg aria-hidden="true"><use href="#i-${name}"/></svg>`;
 const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
 const foil = new PulseFoil();
-const kine = new PulseKine();
 const heroScene = new PulseHeroScene($("#hero-scene"), $("#hero-image"));
 
 function readPreference(key, fallback) {
@@ -685,9 +684,13 @@ $("#file-input").addEventListener("change", async (event) => {
 
 const canvas = $("#particles");
 const context = canvas.getContext("2d");
-const visualizerCanvas = $("#music-visualizer");
-const nebula = new PulseNebulaField(visualizerCanvas);
-const sceneCanvas = $("#soundscape");
+const nebula = new PulseNebulaField($("#music-visualizer"));
+const visualizerCanvas = nebula.canvas;
+const immersiveNebula = new PulseNebulaField($("#soundscape"), {
+  immersive: true,
+  motion: nebula.motion,
+});
+const sceneCanvas = $("#immersive-particles");
 const scene = sceneCanvas.getContext("2d");
 const heroWaveCanvas = $("#hero-waveform");
 const heroWaveContext = heroWaveCanvas.getContext("2d");
@@ -723,12 +726,6 @@ const noteColors = [
 ];
 let trailPointer = null;
 let trailColor = 0;
-const starfield = Array.from({ length: 85 }, () => ({
-  x: Math.random(),
-  y: Math.random(),
-  size: Math.random() * 1.5 + 0.4,
-  phase: Math.random() * Math.PI * 2,
-}));
 let width = window.innerWidth;
 let height = window.innerHeight;
 let pixelRatio = Math.min(window.devicePixelRatio || 1, 1.75);
@@ -748,6 +745,7 @@ function resizeCanvas() {
   context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   scene.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   nebula.resize(width, height, pixelRatio);
+  immersiveNebula.resize(width, height, pixelRatio);
   resizeHeroWaveform();
   if ($("#immersive").open) {
     const rectangle = $(".sound-orb").getBoundingClientRect();
@@ -915,6 +913,7 @@ function drawParticles(target) {
 
 function openImmersive() {
   toggleQueue(false);
+  heroPointer = null;
   if (!$("#immersive").open) $("#immersive").showModal();
   document.documentElement.style.overflow = "hidden";
   resizeCanvas();
@@ -1021,92 +1020,11 @@ function updateHeroMotion(delta) {
 }
 
 function drawSoundscape(time, levels) {
+  immersiveNebula.render(time, levels, state.effects && !motionPreference.matches);
   scene.clearRect(0, 0, width, height);
-  const glow = scene.createRadialGradient(
-    orb.x,
-    orb.y,
-    10,
-    orb.x,
-    orb.y,
-    Math.max(width, height) * 0.65,
-  );
-  glow.addColorStop(0, `rgba(136,129,168,${0.08 + levels.energy * 0.13})`);
-  glow.addColorStop(0.5, "rgba(65,57,80,0.025)");
-  glow.addColorStop(1, "rgba(0,0,0,0)");
-  scene.fillStyle = glow;
-  scene.fillRect(0, 0, width, height);
-  const motion = state.effects ? time * 0.0001 : 0;
-  for (const star of starfield) {
-    const x =
-      (star.x * width + Math.sin(motion + star.phase) * 16 + width) % width;
-    const y = (star.y * height - motion * 9 + height * 10) % height;
-    scene.fillStyle = `rgba(210,207,227,${0.12 + (Math.sin(motion * 2 + star.phase) + 1) * 0.12})`;
-    scene.beginPath();
-    scene.arc(x, y, star.size, 0, Math.PI * 2);
-    scene.fill();
-  }
-  drawFrequencyRing(scene, orb.x, orb.y, width < 700 ? 127 : 149, levels);
   if (state.effects)
     $(".sound-orb").style.setProperty("--orb-scale", 1 + levels.bass * 0.075);
   drawParticles(scene);
-}
-
-function drawFrequencyRing(target, x, y, radius, levels) {
-  const energy = state.effects ? levels.energy : 0;
-  const bass = state.effects ? levels.bass : 0;
-  const innerRadius = radius + bass * 7;
-  target.save();
-  const glow = target.createRadialGradient(
-    x,
-    y,
-    radius * 0.55,
-    x,
-    y,
-    radius * 1.4,
-  );
-  glow.addColorStop(0, "rgba(189,184,211,0)");
-  glow.addColorStop(0.65, `rgba(189,184,211,${0.018 + energy * 0.045})`);
-  glow.addColorStop(1, "rgba(189,184,211,0)");
-  target.fillStyle = glow;
-  target.fillRect(
-    x - radius * 1.4,
-    y - radius * 1.4,
-    radius * 2.8,
-    radius * 2.8,
-  );
-  target.lineWidth = 1;
-  target.strokeStyle = `rgba(198,194,214,${0.1 + energy * 0.13})`;
-  target.beginPath();
-  target.arc(x, y, innerRadius - 12, 0, Math.PI * 2);
-  target.stroke();
-  target.strokeStyle = `rgba(216,211,230,${0.15 + energy * 0.22})`;
-  target.beginPath();
-  target.arc(x, y, innerRadius, 0, Math.PI * 2);
-  target.stroke();
-  const count = levels.bands.length * 4;
-  target.lineWidth = width <= 760 ? 1.8 : 2.4;
-  target.lineCap = "round";
-  for (let index = 0; index < count; index += 1) {
-    const mirroredIndex = index < count / 2 ? index : count - 1 - index;
-    const bandIndex = Math.floor(mirroredIndex / 2);
-    const amplitude = state.effects ? levels.bands[bandIndex] : 0;
-    const angle = (index / count) * Math.PI * 2 - Math.PI / 2;
-    const cosine = Math.cos(angle);
-    const sine = Math.sin(angle);
-    const start = innerRadius + 7;
-    const length = 2 + Math.pow(amplitude, 1.4) * radius * 0.3;
-    const color = foil.colorAt(
-      x + cosine * innerRadius,
-      y + sine * innerRadius,
-    );
-    const silver = color.map((channel) => Math.round(130 + channel * 0.42));
-    target.strokeStyle = `rgba(${silver.join(",")},${0.18 + amplitude * 0.68})`;
-    target.beginPath();
-    target.moveTo(x + cosine * start, y + sine * start);
-    target.lineTo(x + cosine * (start + length), y + sine * (start + length));
-    target.stroke();
-  }
-  target.restore();
 }
 
 let previousFrame = performance.now();
@@ -1116,7 +1034,6 @@ function animate(time) {
   previousFrame = time;
   updateHeroMotion(delta);
   foil.update();
-  kine.render(foil);
   context.clearRect(0, 0, width, height);
   for (let index = particles.length - 1; index >= 0; index -= 1) {
     const particle = particles[index];
@@ -1137,11 +1054,13 @@ function animate(time) {
   }
   drawParticles(context);
   const levels = audio.getLevels();
-  if (heroVisible)
-    heroScene.render(time, levels, state.effects && !motionPreference.matches);
-  nebula.render(time, levels, state.effects && !motionPreference.matches);
-  drawHeroWaveform(levels);
   if ($("#immersive").open) drawSoundscape(time, levels);
+  else {
+    if (heroVisible)
+      heroScene.render(time, levels, state.effects && !motionPreference.matches);
+    nebula.render(time, levels, state.effects && !motionPreference.matches);
+    drawHeroWaveform(levels);
+  }
   if (time - lastUiFrame > 90) {
     lastUiFrame = time;
     if (!state.seeking) {
@@ -1166,6 +1085,8 @@ function animate(time) {
 window.addEventListener("pagehide", (event) => {
   if (event.persisted) return;
   audio.dispose();
+  nebula.dispose();
+  immersiveNebula.dispose();
   fileUrls.forEach((url) => URL.revokeObjectURL(url));
 });
 

@@ -15,13 +15,12 @@
     />
     <link rel="stylesheet" href="assets/fonts/fonts.css?v=2.1.0" />
     <link rel="stylesheet" href="styles.css?v=2.3.0" />
-    <link rel="stylesheet" href="foil.css?v=2.5.0" />
+    <link rel="stylesheet" href="foil.css?v=2.6.0" />
     <script src="audio-engine.js?v=2.1.0" defer></script>
     <script src="foil-engine.js?v=2.4.0" defer></script>
-    <script src="brand-kine.js?v=2.5.0" defer></script>
-    <script src="hero-scene.js?v=2.5.0" defer></script>
-    <script src="nebula-field.js?v=2.5.0" defer></script>
-    <script src="app.js?v=2.5.0" defer></script>
+    <script src="hero-scene.js?v=2.6.0" defer></script>
+    <script src="nebula-field.js?v=2.6.0" defer></script>
+    <script src="app.js?v=2.6.0" defer></script>
   </head>
   <body>
     <svg
@@ -125,10 +124,7 @@
     <aside class="sidebar" aria-label="主导航">
       <a class="brand" href="#" aria-label="PULSE 首页"
         ><span class="brand-mark"><i></i><i></i><i></i><i></i></span
-        ><span class="kine-word"
-          ><span class="kine-label">PULSE<span class="brand-dot">.</span></span
-          ></span
-        ></a
+        ><span class="brand-word foil-text" data-foil="text">PULSE.</span></a
       >
       <nav class="main-nav">
         <button
@@ -184,9 +180,7 @@
     <div class="main-shell">
       <header class="topbar">
         <a class="mobile-brand" href="#" aria-label="PULSE 首页"
-          ><span class="kine-word"
-            ><span class="kine-label">PULSE.</span></span
-          ></a
+          ><span class="brand-word foil-text" data-foil="text">PULSE.</span></a
         >
         <div class="breadcrumb">
           <strong id="breadcrumb-current">发现音乐</strong>
@@ -403,9 +397,7 @@
         </section>
         <footer class="page-footer">
           <a class="footer-brand" href="#"
-            ><span class="kine-word"
-              ><span class="kine-label">PULSE.</span></span
-            ></a
+            ><span class="brand-word foil-text" data-foil="text">PULSE.</span></a
           ><span class="keyboard-hint"><kbd>Space</kbd> 播放 / 暂停</span>
         </footer>
       </main>
@@ -515,11 +507,10 @@
     </aside>
     <dialog class="immersive" id="immersive" aria-labelledby="immersive-title">
       <canvas id="soundscape" aria-hidden="true"></canvas>
+      <canvas id="immersive-particles" aria-hidden="true"></canvas>
       <div class="immersive-top">
         <a class="footer-brand" href="#"
-          ><span class="kine-word"
-            ><span class="kine-label">PULSE.</span></span
-          ></a
+          ><span class="brand-word foil-text" data-foil="text">PULSE.</span></a
         ><button
           class="icon-button"
           id="immersive-close"
