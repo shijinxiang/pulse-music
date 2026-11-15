@@ -687,11 +687,11 @@ $("#file-input").addEventListener("change", async (event) => {
 
 const canvas = $("#particles");
 const context = canvas.getContext("2d");
-const nebula = new PulseNebulaField($("#music-visualizer"));
-const visualizerCanvas = nebula.canvas;
-const immersiveNebula = new PulseNebulaField($("#soundscape"), {
+const terrain = new PulseWaveTerrain($("#music-visualizer"));
+const visualizerCanvas = terrain.canvas;
+const immersiveTerrain = new PulseWaveTerrain($("#soundscape"), {
   immersive: true,
-  motion: nebula.motion,
+  simulation: terrain.simulation,
 });
 const sceneCanvas = $("#immersive-particles");
 const scene = sceneCanvas.getContext("2d");
@@ -747,8 +747,8 @@ function resizeCanvas() {
   });
   context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   scene.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-  nebula.resize(width, height, pixelRatio);
-  immersiveNebula.resize(width, height, pixelRatio);
+  terrain.resize(width, height, pixelRatio);
+  immersiveTerrain.resize(width, height, pixelRatio);
   resizeHeroWaveform();
   if ($("#immersive").open) {
     const rectangle = $(".sound-orb").getBoundingClientRect();
@@ -1028,7 +1028,7 @@ function updateHeroMotion(delta) {
 }
 
 function drawSoundscape(time, levels) {
-  immersiveNebula.render(time, levels, state.effects && !motionPreference.matches);
+  immersiveTerrain.render(time, levels, state.effects && !motionPreference.matches);
   scene.clearRect(0, 0, width, height);
   if (state.effects)
     $(".sound-orb").style.setProperty("--orb-scale", 1 + levels.bass * 0.075);
@@ -1067,7 +1067,7 @@ function animate(time) {
     padMaterials.render(foil, time);
     if (heroVisible)
       heroScene.render(time, levels, state.effects && !motionPreference.matches);
-    nebula.render(time, levels, state.effects && !motionPreference.matches);
+    terrain.render(time, levels, state.effects && !motionPreference.matches);
     drawHeroWaveform(levels);
   }
   if (time - lastUiFrame > 90) {
@@ -1095,8 +1095,8 @@ window.addEventListener("pagehide", (event) => {
   if (event.persisted) return;
   audio.dispose();
   padMaterials.dispose();
-  nebula.dispose();
-  immersiveNebula.dispose();
+  terrain.dispose();
+  immersiveTerrain.dispose();
   fileUrls.forEach((url) => URL.revokeObjectURL(url));
 });
 
