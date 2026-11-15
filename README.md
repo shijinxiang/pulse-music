@@ -12,10 +12,11 @@
 - 主界面和沉浸播放共用方柱地形渲染代码与同一波纹状态，切换时延续扩散中的波纹。
 - 页面滚动时，耳机、三个音符与背景以不同深度位移。鼠标靠近耳机旁的音符时，音符向外划开并弹性归位，支持点击与键盘弹奏。
 - PULSE 字标沿用最新小卡片参考中的镭射箔文字，用完整字形呈现随指针移动的连续虹彩与银色高光。
+- 顶部导航、搜索、风格筛选、“探索全部”和底部播放器采用液态玻璃。Chromium 使用圆角曲面的 Snell 折射与中性高光，兼容环境提供磨砂样式，支持按压回弹、指针高光、键盘焦点和减少动态/透明度设置。
 - 鼠标移动时留下七彩音符，停止后约 0.3 秒淡出。组件采用统一圆角，大标题使用电光切割字形。
 - 鼠标在曲目卡片和音块上移动时，所有箔面以同一指针光源计算虹彩，鼠标指针呈现变色音符。支持键盘操作、触屏与减少动态效果设置。
 
-材质参考来自 [StyleKit Diffraction Foil](https://www.stylekit.top/zh/styles/diffraction-foil)。光栅光谱与 CSS 材质改写自用户提供的参考页面，MIT 许可保存于 `assets/stylekit-LICENSE.txt`。
+材质参考来自 [StyleKit Diffraction Foil](https://www.stylekit.top/zh/styles/diffraction-foil) 和 [Liquid Glass](https://www.stylekit.top/zh/styles/liquid-glass)。光栅光谱与 CSS 材质改写自用户提供的参考页面，MIT 许可保存于 `assets/stylekit-LICENSE.txt`。玻璃曲面位移图采用独立实现的 Snell 折射计算。
 
 背景效果的视觉参考为用户提供的屏幕录制。运行时的方柱、波纹、灯光与动画均由代码计算。
 

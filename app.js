@@ -62,6 +62,7 @@ const foil = new PulseFoil();
 const padMaterials = new PulsePadMaterials();
 const padButtons = $$(".music-pad");
 const heroScene = new PulseHeroScene($("#hero-scene"), $("#hero-image"));
+const liquidGlass = new PulseLiquidGlass();
 
 function readPreference(key, fallback) {
   try {
@@ -519,6 +520,7 @@ document.addEventListener("click", (event) => {
 function updateEffects() {
   document.body.classList.toggle("motion-off", !state.effects);
   foil.setEnabled(state.effects);
+  liquidGlass.setEnabled(state.effects);
   $("#effects-toggle").setAttribute("aria-pressed", String(state.effects));
   $("#effects-toggle").setAttribute(
     "aria-label",
@@ -1095,6 +1097,7 @@ window.addEventListener("pagehide", (event) => {
   if (event.persisted) return;
   audio.dispose();
   padMaterials.dispose();
+  liquidGlass.dispose();
   terrain.dispose();
   immersiveTerrain.dispose();
   fileUrls.forEach((url) => URL.revokeObjectURL(url));
