@@ -523,7 +523,7 @@ document.addEventListener("keydown", (event) => {
     event.ctrlKey ||
     event.metaKey ||
     event.altKey ||
-    event.target.matches("input, textarea, [contenteditable=true]")
+    event.target.closest("input, textarea, select, [contenteditable=true]")
   )
     return;
   if (event.code === "Space" && !event.target.closest("button, a")) {
