@@ -17,16 +17,18 @@
     <link rel="stylesheet" href="styles.css?v=2.7.0" />
     <link rel="stylesheet" href="foil.css?v=2.9.0" />
     <link rel="stylesheet" href="liquid-glass.css?v=3.1.0" />
-    <link rel="stylesheet" href="library.css?v=3.0.0" />
+    <link rel="stylesheet" href="library.css?v=3.2.0" />
+    <link rel="stylesheet" href="genre-carousel.css?v=3.2.0" />
     <script src="audio-engine.js?v=3.0.0" defer></script>
     <script src="foil-engine.js?v=2.4.0" defer></script>
     <script src="pad-materials.js?v=2.7.0" defer></script>
     <script src="hero-scene.js?v=2.9.0" defer></script>
     <script src="wave-terrain.js?v=2.9.0" defer></script>
-    <script src="liquid-glass.js?v=3.0.0" defer></script>
+    <script src="liquid-glass.js?v=3.2.0" defer></script>
     <script src="catalog.js?v=3.0.0" defer></script>
     <script src="lyrics.js?v=3.0.0" defer></script>
-    <script src="app.js?v=3.0.0" defer></script>
+    <script src="genre-carousel.js?v=3.2.0" defer></script>
+    <script src="app.js?v=3.2.0" defer></script>
   </head>
   <body>
     <svg
@@ -291,13 +293,13 @@
               导入音乐<svg><use href="#i-plus" /></svg>
             </button>
           </div>
-          <div class="playlist-shelf" aria-label="主题歌单">
-            <button class="playlist-button" data-collection="memory">青春回放<svg><use href="#i-arrow"/></svg></button>
-            <button class="playlist-button" data-collection="night">深夜慢听<svg><use href="#i-arrow"/></svg></button>
-            <button class="playlist-button" data-collection="screen">影视回声<svg><use href="#i-arrow"/></svg></button>
-            <button class="playlist-button" data-collection="energy">轻快律动<svg><use href="#i-arrow"/></svg></button>
+          <div class="collection-toolbar">
+            <label class="collection-picker"><span>风格</span><select id="collection-select" aria-label="风格歌单">
+              <option value="">全部歌单</option><option value="memory">青春回放</option><option value="night">深夜慢听</option><option value="screen">影视回声</option><option value="energy">轻快律动</option>
+            </select><svg aria-hidden="true"><use href="#i-chevron"/></svg></label>
           </div>
-          <div class="filter-row" aria-label="音乐风格"><div class="filter-chips" role="group" aria-label="按风格筛选">
+          <div class="genre-selector" id="genre-carousel" role="group" aria-label="音乐风格轮播，使用左右方向键选择" aria-roledescription="轮播" tabindex="0">
+            <div class="genre-stage"><div class="genre-camera"><div class="genre-ring">
             <button class="filter-chip active" data-filter="all">为你精选</button>
             <button class="filter-chip" data-filter="pop">华语流行</button>
             <button class="filter-chip" data-filter="cantopop">粤语经典</button>
@@ -307,7 +309,11 @@
             <button class="filter-chip" data-filter="sweet">轻快甜歌</button>
             <button class="filter-chip" data-filter="folk">民谣慢调</button>
             <button class="filter-chip" data-filter="kpop">韩语流行</button>
-          </div></div>
+            </div></div></div>
+            <button class="genre-previous" type="button" aria-label="上一个音乐风格"><svg><use href="#i-arrow"/></svg></button>
+            <button class="genre-next" type="button" aria-label="下一个音乐风格"><svg><use href="#i-arrow"/></svg></button>
+            <span class="genre-status" role="status" aria-live="polite"></span>
+          </div>
           <div class="track-grid" id="track-grid"></div>
           <div class="empty-state" id="empty-state" hidden>
             <svg><use href="#i-headphones" /></svg>

@@ -49,6 +49,12 @@ const state = {
   seeking: false,
 };
 
+const genreCarousel = new PulseGenreCarousel($("#genre-carousel"), (filter) => {
+  if (state.filter === filter) return;
+  state.filter = filter;
+  renderTracks();
+});
+
 function escapeText(value) {
   return String(value).replace(
     /[&<>"']/g,
@@ -160,28 +166,7 @@ function renderQueue() {
 }
 
 function updateFilterChips(filter) {
-  const chips = $$(".filter-chip");
-  const previous = chips.map((chip) => chip.getBoundingClientRect());
-  for (const chip of chips) {
-    for (const animation of chip.getAnimations()) animation.cancel();
-    const active = chip.dataset.filter === filter;
-    chip.classList.toggle("active", active);
-    chip.setAttribute("aria-pressed", String(active));
-  }
-  if (!state.effects || motionPreference.matches) return;
-  const next = chips.map((chip) => chip.getBoundingClientRect());
-  chips.forEach((chip, index) => {
-    const before = previous[index];
-    const after = next[index];
-    if (!before.width || !after.width) return;
-    chip.animate(
-      [
-        { transform: `translate(${before.left - after.left}px, ${before.top - after.top}px) scaleX(${before.width / after.width})` },
-        { transform: "translate(0, 0) scaleX(1)" },
-      ],
-      { duration: 380, easing: "cubic-bezier(0.2, 1.18, 0.4, 1)" },
-    );
-  });
+  genreCarousel.sync(filter);
 }
 
 function setView(view, collection = null) {
@@ -220,6 +205,7 @@ function setView(view, collection = null) {
   $("#all-music").hidden = view === "library";
   $("#library-import").hidden = view !== "library";
   document.querySelector('[data-filter="all"]').textContent = view === "discover" ? "为你精选" : "全部风格";
+  $("#collection-select").value = collection || "";
   updateFilterChips("all");
   renderTracks();
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -364,13 +350,9 @@ $(".page-footer .footer-brand").addEventListener("click", (event) => {
 });
 $("#all-music").addEventListener("click", () => setView("library"));
 $("#reset-filter").addEventListener("click", () => setView("discover"));
-$$("[data-filter]").forEach((button) =>
-  button.addEventListener("click", () => {
-    state.filter = button.dataset.filter;
-    updateFilterChips(state.filter);
-    renderTracks();
-  }),
-);
+$("#collection-select").addEventListener("change", (event) => {
+  setView("library", event.target.value || null);
+});
 $("#search").addEventListener("input", (event) => {
   if (state.view === "studio" || (state.view === "discover" && event.target.value.trim())) {
     const query = event.target.value;
@@ -465,6 +447,7 @@ function updateEffects() {
   document.body.classList.toggle("motion-off", !state.effects);
   foil.setEnabled(state.effects);
   liquidGlass.setEnabled(state.effects);
+  genreCarousel.setEnabled(state.effects && !motionPreference.matches);
   $("#effects-toggle").setAttribute("aria-pressed", String(state.effects));
   $("#effects-toggle").setAttribute(
     "aria-label",
@@ -988,6 +971,7 @@ function animate(time) {
   const delta = Math.min((time - previousFrame) / 16.67, 2);
   previousFrame = time;
   updateHeroMotion(delta);
+  genreCarousel.update(time, state.view !== "studio" && !$("#immersive").open && !document.hidden && document.hasFocus());
   foil.update();
   context.clearRect(0, 0, width, height);
   for (let index = particles.length - 1; index >= 0; index -= 1) {
@@ -1048,6 +1032,7 @@ window.addEventListener("pagehide", (event) => {
   audio.dispose();
   padMaterials.dispose();
   liquidGlass.dispose();
+  genreCarousel.dispose();
   terrain.dispose();
   immersiveTerrain.dispose();
   fileUrls.forEach((url) => URL.revokeObjectURL(url));
