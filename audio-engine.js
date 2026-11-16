@@ -1,4 +1,4 @@
-/* Original, browser-synthesized music. Audio starts only after a listener gesture. */
+/* File playback and interactive synthesizer. Audio starts after a listener gesture. */
 class PulseAudio {
   constructor() {
     this.context = null;

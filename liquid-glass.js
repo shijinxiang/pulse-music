@@ -3,8 +3,9 @@ class PulseLiquidGlass {
     this.controls = [...document.querySelectorAll([
       ".sidebar", ".topbar", ".nav-item", ".collection-link",
       ".import-button", ".search-box", ".effects-toggle",
-      ".filter-chip", ".all-music-link", ".player",
+      ".filter-chip", ".playlist-button", ".all-music-link", ".player",
       ".player .icon-button", "#play", ".queue-panel", "#queue-close",
+      ".immersive-controls button",
     ].join(","))];
     this.maps = new Map();
     this.sequence = 0;

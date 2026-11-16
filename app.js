@@ -1,58 +1,4 @@
-const tracks = [
-  {
-    id: "neon",
-    title: "Neon Afterglow",
-    coverTitle: "Neon\nAfterglow",
-    genre: "electronic",
-    style: "电子浪潮",
-    mood: "深夜驰行",
-    bpm: 110,
-    duration: 144,
-    root: 45,
-    melody: [0, 7, 10, 12, 7, 3, 0, 14, 12, 7, 3, 10],
-    art: 0,
-  },
-  {
-    id: "lunar",
-    title: "Lunar Drift",
-    coverTitle: "Lunar\nDrift",
-    genre: "ambient",
-    style: "氛围漫游",
-    mood: "星际漂浮",
-    bpm: 76,
-    duration: 160,
-    root: 48,
-    melody: [0, 7, 12, 14, 19, 12],
-    art: 1,
-  },
-  {
-    id: "soft",
-    title: "Soft Focus",
-    coverTitle: "Soft\nFocus",
-    genre: "lofi",
-    style: "Lo-fi 时刻",
-    mood: "温柔放空",
-    bpm: 82,
-    duration: 156,
-    root: 50,
-    melody: [0, 3, 7, 10, 7, 5, 3, 0, 12, 10, 7, 3],
-    art: 2,
-  },
-  {
-    id: "green",
-    title: "Green Room",
-    coverTitle: "Green\nRoom",
-    genre: "house",
-    style: "律动 House",
-    mood: "自由律动",
-    bpm: 122,
-    duration: 132,
-    root: 43,
-    melody: [0, 0, 7, 10, 12, 7, 0, 3, 10, 7, 3, 12],
-    art: 3,
-  },
-];
-
+const tracks = window.PULSE_CATALOG;
 const audio = new PulseAudio();
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -63,6 +9,8 @@ const padMaterials = new PulsePadMaterials();
 const padButtons = $$(".music-pad");
 const heroScene = new PulseHeroScene($("#hero-scene"), $("#hero-image"));
 const liquidGlass = new PulseLiquidGlass();
+const lyrics = new PulseLyrics(audio);
+const collectionLabels = { memory: "青春回放", night: "深夜慢听", screen: "影视回声", energy: "轻快律动" };
 
 function readPreference(key, fallback) {
   try {
@@ -129,24 +77,20 @@ function toast(message) {
 }
 
 function visibleTracks() {
-  return tracks.filter((track) => {
-    const matchesView =
-      state.view !== "favorites" || state.favorites.has(track.id);
-    const matchesGenre = state.filter === "all" || track.genre === state.filter;
-    const matchesCollection =
-      !state.collection ||
-      (state.collection === "night"
-        ? ["electronic", "ambient"].includes(track.genre)
-        : ["ambient", "lofi"].includes(track.genre));
-    const searchable =
-      `${track.title} ${track.style} ${track.mood} ${track.genre}`.toLowerCase();
-    return (
-      matchesView &&
-      matchesGenre &&
-      matchesCollection &&
-      searchable.includes(state.query.toLowerCase().trim())
-    );
+  const filtered = tracks.filter((track) => {
+    const matchesView = state.view !== "favorites" || state.favorites.has(track.id);
+    const matchesGenre = state.filter === "all" || (track.genres || [track.genre]).includes(state.filter);
+    const matchesCollection = !state.collection || (track.collections || []).includes(state.collection);
+    const searchable = `${track.title} ${track.artist || ""} ${track.style} ${track.mood} ${(track.tags || []).join(" ")}`.toLowerCase();
+    return matchesView && matchesGenre && matchesCollection && searchable.includes(state.query.toLowerCase().trim());
   });
+  if (state.view !== "discover" || state.query || state.collection) return filtered;
+  const featured = state.filter === "all" ? filtered.filter((track) => track.homeRank != null).sort((a,b) => a.homeRank - b.homeRank) : filtered;
+  return featured.slice(0, 8);
+}
+
+function coverStyle(track) {
+  return track.cover ? `style="background-image:url(${track.cover})"` : "";
 }
 
 function renderTracks() {
@@ -157,14 +101,14 @@ function renderTracks() {
       return `<article class="track-card collector-card${audio.playing && track.id === state.currentId ? " playing" : ""}" data-track="${track.id}">
       <span class="material-rim foil light" data-foil="foil" aria-hidden="true"></span>
       <div class="cover-wrap">
-        <div class="cover-image album-art art-${track.art}" role="img" aria-label="${escapeText(track.title)} 专辑封面"></div>
+        <div class="cover-image album-art catalog-art-${track.art}" ${coverStyle(track)} role="img" aria-label="${escapeText(track.title)} 音乐封面"></div>
         <div class="cover-shade"></div>
-        <span class="cover-title">${escapeText(track.coverTitle)}</span>
+        <span class="track-artist">${escapeText(track.artist || "本地音乐")}</span><span class="cover-title">${escapeText(track.coverTitle)}</span>
         <button class="cover-select" data-play="${track.id}" aria-label="播放 ${escapeText(track.title)}"></button>
         <span class="cover-play material-pearl" data-foil="pearl" aria-hidden="true">${icon("play")}</span>
       </div>
       <div class="track-info-row"><h3 class="track-name"><button class="track-title-button" data-play="${track.id}">${escapeText(track.title)}</button></h3><button class="icon-button like-button" data-like="${track.id}" aria-label="${liked ? "取消收藏" : "收藏"} ${escapeText(track.title)}" aria-pressed="${liked}">${icon("heart")}</button></div>
-      <div class="track-meta"><span class="track-meta-left">${escapeText(track.style)}</span><span class="track-bpm">${track.local ? formatTime(track.duration) : `${track.bpm} BPM`}</span></div>
+      <div class="track-meta"><span class="track-meta-left">${escapeText(track.artist || "本地音乐")} · ${escapeText(track.style)}</span><span class="track-bpm">${track.local ? formatTime(track.duration) : `${track.bpm} BPM`}</span></div>
     </article>`;
     })
     .join("");
@@ -177,6 +121,7 @@ function renderTracks() {
       : "点击音乐旁的爱心，收藏你的心动频率。";
   updateCardPlayback();
   updateFavoriteCount();
+  renderQueue();
   foil.invalidate();
 }
 
@@ -205,10 +150,10 @@ function updateFavoriteCount() {
 }
 
 function renderQueue() {
-  $("#queue-list").innerHTML = tracks
+  $("#queue-list").innerHTML = visibleTracks()
     .map(
       (track) =>
-        `<button class="queue-row${track.id === state.currentId ? " current" : ""}" data-play="${track.id}" aria-label="播放 ${escapeText(track.title)}"><span class="queue-art album-art art-${track.art}"></span><span class="queue-details"><strong>${escapeText(track.title)}</strong><small>${escapeText(track.style)} · ${formatTime(track.duration)}</small></span>${icon(track.id === state.currentId && audio.playing ? "pause" : "play")}</button>`,
+        `<button class="queue-row${track.id === state.currentId ? " current" : ""}" data-play="${track.id}" aria-label="播放 ${escapeText(track.title)}"><span class="queue-art album-art catalog-art-${track.art}" ${coverStyle(track)}></span><span class="queue-details"><strong>${escapeText(track.title)}</strong><small>${escapeText(track.artist || "本地音乐")} · ${escapeText(track.style)}</small></span>${icon(track.id === state.currentId && audio.playing ? "pause" : "play")}</button>`,
     )
     .join("");
   foil.invalidate();
@@ -270,15 +215,11 @@ function setView(view, collection = null) {
     favorites: "让你心动的频率",
     library: "探索全部音乐",
   };
-  $("#breadcrumb-current").textContent = collection
-    ? collection === "night"
-      ? "深夜漫游"
-      : "专注时刻"
-    : labels[view];
-  $("#section-title").innerHTML =
-    `${collection ? (collection === "night" ? "给深夜，一点回响" : "把世界，调成静音") : titles[view] || titles.discover}<span class="lime-dot">.</span>`;
+  $("#breadcrumb-current").textContent = collection ? collectionLabels[collection] : labels[view];
+  $("#section-title").innerHTML = `${collection ? collectionLabels[collection] : titles[view] || titles.discover}<span class="lime-dot">.</span>`;
   $("#all-music").hidden = view === "library";
   $("#library-import").hidden = view !== "library";
+  document.querySelector('[data-filter="all"]').textContent = view === "discover" ? "为你精选" : "全部风格";
   updateFilterChips("all");
   renderTracks();
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -287,10 +228,13 @@ function setView(view, collection = null) {
 function updateTrackInfo() {
   const track = currentTrack();
   $("#player-title").textContent = track.title;
-  $("#player-artist").textContent = track.style;
-  $("#player-art").className = `player-art album-art art-${track.art}`;
+  $("#player-artist").textContent = `${track.artist || "本地音乐"} · ${track.style}`;
+  $("#player-art").className = `player-art album-art catalog-art-${track.art}`;
+  $("#player-art").style.backgroundImage = track.cover ? `url(${track.cover})` : "";
   $("#immersive-title").textContent = track.title;
-  $("#immersive-style").textContent = track.style;
+  $("#immersive-style").textContent = `${track.artist || "本地音乐"} · ${track.style}`;
+  $("#immersive-duration").textContent = formatTime(track.duration);
+  lyrics.setTrack(track);
   $("#immersive-bpm").textContent = track.local
     ? formatTime(track.duration)
     : `${track.bpm} BPM`;
@@ -338,15 +282,17 @@ function togglePlayback() {
 }
 
 async function advanceTrack(direction = 1) {
-  let index = tracks.findIndex((track) => track.id === state.currentId);
-  if (state.shuffle && tracks.length > 1) {
+  const visible = visibleTracks();
+  const queue = visible.length ? visible : tracks;
+  let index = queue.findIndex((track) => track.id === state.currentId);
+  if (state.shuffle && queue.length > 1) {
     index =
-      (index + 1 + Math.floor(Math.random() * (tracks.length - 1))) %
-      tracks.length;
+      (index + 1 + Math.floor(Math.random() * (queue.length - 1))) %
+      queue.length;
   } else {
-    index = (index + direction + tracks.length) % tracks.length;
+    index = (index + direction + queue.length) % queue.length;
   }
-  await startTrack(tracks[index].id, false);
+  await startTrack(queue[index].id, false);
 }
 
 function updateLikes() {
@@ -403,7 +349,7 @@ $$("[data-view]").forEach((button) =>
 );
 $$("[data-collection]").forEach((button) =>
   button.addEventListener("click", () =>
-    setView("discover", button.dataset.collection),
+    setView("library", button.dataset.collection),
   ),
 );
 $$(".brand, .mobile-brand").forEach((link) =>
@@ -426,7 +372,7 @@ $$("[data-filter]").forEach((button) =>
   }),
 );
 $("#search").addEventListener("input", (event) => {
-  if (state.view === "studio") {
+  if (state.view === "studio" || (state.view === "discover" && event.target.value.trim())) {
     const query = event.target.value;
     setView("library");
     $("#search").value = query;
@@ -447,6 +393,8 @@ $("#play").addEventListener("click", togglePlayback);
 $("#hero-play").addEventListener("click", togglePlayback);
 $("#immersive-play").addEventListener("click", togglePlayback);
 $("#next").addEventListener("click", () => advanceTrack());
+$("#immersive-previous").addEventListener("click", () => advanceTrack(-1));
+$("#immersive-next").addEventListener("click", () => advanceTrack(1));
 $("#previous").addEventListener("click", async () => {
   if (audio.position > 3) await audio.seek(0);
   else await advanceTrack(-1);
@@ -477,27 +425,23 @@ $("#volume").addEventListener("input", (event) =>
 $("#mute").addEventListener("click", () =>
   setVolume(audio.volume > 0 ? 0 : state.lastVolume),
 );
-$("#progress").addEventListener("pointerdown", () => {
-  state.seeking = true;
-});
-$("#progress").addEventListener("input", (event) => {
-  const value = Number(event.target.value);
-  state.seeking = true;
-  event.target.style.setProperty("--fill", `${value}%`);
-  $("#current-time").textContent = formatTime((audio.duration * value) / 100);
-});
-$("#progress").addEventListener("change", async (event) => {
-  try {
-    await audio.seek((audio.duration * Number(event.target.value)) / 100);
-  } catch {
-    toast("这一段暂时无法定位，请重新点击播放。");
-  }
-  state.seeking = false;
-  updatePlayback();
-});
-$("#progress").addEventListener("pointercancel", () => {
-  state.seeking = false;
-});
+for (const progress of $$("#progress, #immersive-progress")) {
+  progress.addEventListener("pointerdown", () => { state.seeking = true; });
+  progress.addEventListener("input", (event) => {
+    state.seeking = true;
+    event.target.style.setProperty("--fill", `${event.target.value}%`);
+    const position = formatTime(audio.duration * Number(event.target.value) / 100);
+    $("#current-time").textContent = position;
+    $("#immersive-current").textContent = position;
+  });
+  progress.addEventListener("change", async (event) => {
+    try { await audio.seek(audio.duration * Number(event.target.value) / 100); }
+    catch { toast("这一段暂时无法定位，请重新点击播放。"); }
+    state.seeking = false;
+    updatePlayback();
+  });
+  progress.addEventListener("pointercancel", () => { state.seeking = false; });
+}
 document.addEventListener("pointerup", () => {
   if (state.seeking)
     requestAnimationFrame(() => {
@@ -922,13 +866,14 @@ function openImmersive() {
   if (!$("#immersive").open) $("#immersive").showModal();
   document.documentElement.style.overflow = "hidden";
   resizeCanvas();
-  burst(orb.x, orb.y, 2);
+  lyrics.open();
 }
 ["#hero-immersive", "#expand", "#player-art"].forEach((selector) =>
   $(selector).addEventListener("click", openImmersive),
 );
 $("#immersive-close").addEventListener("click", () => $("#immersive").close());
 $("#immersive").addEventListener("close", () => {
+  lyrics.close();
   pointerDown = false;
   document.documentElement.style.overflow = "";
   $(".sound-orb").style.removeProperty("--orb-scale");
@@ -944,7 +889,7 @@ function padIndexAt(clientX) {
 }
 
 $("#immersive").addEventListener("pointerdown", (event) => {
-  if (event.target.closest("button, a")) return;
+  if (event.target.closest("button, a, .lyrics-viewport, .immersive-track-meta, .immersive-footer")) return;
   pointerDown = true;
   burst(event.clientX, event.clientY, 1.3);
   audio
@@ -1064,6 +1009,7 @@ function animate(time) {
   }
   drawParticles(context);
   const levels = audio.getLevels();
+  lyrics.update();
   if ($("#immersive").open) drawSoundscape(time, levels);
   else {
     padMaterials.render(foil, time);
@@ -1078,8 +1024,12 @@ function animate(time) {
       const position = audio.position;
       const progress = audio.duration ? (position / audio.duration) * 100 : 0;
       $("#current-time").textContent = formatTime(position);
+      $("#immersive-current").textContent = formatTime(position);
+      $("#immersive-progress").value = progress;
+      $("#immersive-progress").style.setProperty("--fill", `${progress}%`);
       $("#progress").value = progress;
       $("#progress").style.setProperty("--fill", `${progress}%`);
+      $("#immersive-progress").setAttribute("aria-valuetext", `${formatTime(position)}，共 ${formatTime(audio.duration)}`);
       $("#progress").setAttribute(
         "aria-valuetext",
         `${formatTime(position)}，共 ${formatTime(audio.duration)}`,
