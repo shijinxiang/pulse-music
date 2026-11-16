@@ -196,23 +196,139 @@ button.liquid-glass:disabled {
 .player .player-spectrum i {
   background: #dce9f5;
 }
-.player input[type="range"] {
-  height: 28px;
-  background: linear-gradient(90deg, #e7f2fc var(--fill), #ffffff26 var(--fill)) center / 100% 3px no-repeat;
+/* Rounded glass rails shared by playback, volume and immersive controls. */
+:is(#progress, #volume, #immersive-progress) {
+  --range-track-height: 8px;
+  --range-thumb-width: 28px;
+  --range-thumb-height: 22px;
+  display: block;
+  appearance: none;
+  -webkit-appearance: none;
+  height: 32px;
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: #e4e5fa;
+  cursor: pointer;
+  touch-action: pan-y;
+  -webkit-tap-highlight-color: transparent;
 }
-.player input[type="range"]::-webkit-slider-thumb {
-  width: 21px;
-  height: 21px;
-  border: 1px solid #ffffffa3;
-  background: radial-gradient(circle at 30% 18%, #ffffffeb, #e4eef78c 45%, #c0cfdd40 80%);
-  box-shadow: 0 2px 5px #0005, inset 0 1px 1px #fff, inset 0 -2px 3px #ffffff38;
+#volume {
+  --range-thumb-width: 21px;
+  --range-thumb-height: 21px;
 }
-.player input[type="range"]::-moz-range-thumb {
-  width: 19px;
-  height: 19px;
-  border: 1px solid #ffffffa3;
-  background: radial-gradient(circle at 30% 18%, #ffffffeb, #e4eef78c 45%, #c0cfdd40 80%);
-  box-shadow: 0 2px 5px #0005, inset 0 1px 1px #fff;
+:is(#progress, #volume, #immersive-progress)::-webkit-slider-runnable-track {
+  box-sizing: border-box;
+  height: var(--range-track-height);
+  border: 1px solid #ffffff26;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #bcb5de 0%, #e8eafa var(--fill), #ffffff18 var(--fill), #ffffff18 100%);
+  box-shadow: inset 0 1px 2px #0006, 0 1px 0 #ffffff14;
+  transition: height 160ms ease-out, border-color 160ms ease-out, box-shadow 160ms ease-out;
+}
+:is(#progress, #volume, #immersive-progress)::-webkit-slider-thumb {
+  box-sizing: border-box;
+  appearance: none;
+  -webkit-appearance: none;
+  width: var(--range-thumb-width);
+  height: var(--range-thumb-height);
+  margin-top: calc((var(--range-track-height) - var(--range-thumb-height)) / 2 - 1px);
+  border: 1px solid #ffffffc2;
+  border-radius: 999px;
+  background: radial-gradient(ellipse at 27% 12%, #fffffff5, #e9edf0a8 40%, #8f97ac52 85%), linear-gradient(140deg, #d2d0ec8c, #ffffff40);
+  box-shadow: 0 3px 7px #0006, inset 0 1px 2px #fff, inset 0 -2px 3px #dce2ff66;
+  transition: transform 160ms var(--glass-settle), margin-top 160ms ease-out, box-shadow 160ms ease-out;
+}
+:is(#progress, #volume, #immersive-progress)::-moz-range-track {
+  box-sizing: border-box;
+  height: var(--range-track-height);
+  border: 1px solid #ffffff26;
+  border-radius: 999px;
+  background: #ffffff18;
+  box-shadow: inset 0 1px 2px #0006, 0 1px 0 #ffffff14;
+}
+:is(#progress, #volume, #immersive-progress)::-moz-range-progress {
+  height: var(--range-track-height);
+  border-radius: 999px;
+  background: linear-gradient(90deg, #bcb5de, #e8eafa);
+  box-shadow: inset 0 1px 0 #ffffff66;
+}
+:is(#progress, #volume, #immersive-progress)::-moz-range-thumb {
+  box-sizing: border-box;
+  width: var(--range-thumb-width);
+  height: var(--range-thumb-height);
+  border: 1px solid #ffffffc2;
+  border-radius: 999px;
+  background: radial-gradient(ellipse at 27% 12%, #fffffff5, #e9edf0a8 40%, #8f97ac52 85%), linear-gradient(140deg, #d2d0ec8c, #ffffff40);
+  box-shadow: 0 3px 7px #0006, inset 0 1px 2px #fff, inset 0 -2px 3px #dce2ff66;
+  transition: transform 160ms var(--glass-settle), box-shadow 160ms ease-out;
+}
+:is(#progress, #volume, #immersive-progress):is(:hover, :focus-visible, :active) {
+  --range-track-height: 10px;
+}
+:is(#progress, #volume, #immersive-progress):is(:hover, :focus-visible)::-webkit-slider-runnable-track {
+  border-color: #ffffff55;
+  box-shadow: inset 0 1px 2px #0004, 0 1px 0 #ffffff30;
+}
+:is(#progress, #volume, #immersive-progress):active::-webkit-slider-thumb {
+  transform: scale(1.12);
+  box-shadow: 0 4px 10px #0007, inset 0 1px 3px #fff, inset 0 -2px 4px #dce2ff80;
+}
+:is(#progress, #volume, #immersive-progress):active::-moz-range-thumb {
+  transform: scale(1.12);
+}
+:is(#progress, #volume, #immersive-progress):focus-visible {
+  outline: 2px solid var(--glass-focus);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(#progress, #volume, #immersive-progress)::-webkit-slider-runnable-track,
+  :is(#progress, #volume, #immersive-progress)::-webkit-slider-thumb {
+    transition: none;
+  }
+  :is(#progress, #volume, #immersive-progress)::-moz-range-thumb {
+    transition: none;
+  }
+  :is(#progress, #volume, #immersive-progress):active::-webkit-slider-thumb {
+    transform: none;
+  }
+  :is(#progress, #volume, #immersive-progress):active::-moz-range-thumb {
+    transform: none;
+  }
+}
+body.motion-off :is(#progress, #volume, #immersive-progress):active::-webkit-slider-thumb {
+  transform: none;
+}
+body.motion-off :is(#progress, #volume, #immersive-progress):active::-moz-range-thumb {
+  transform: none;
+}
+@media (forced-colors: active) {
+  :is(#progress, #volume, #immersive-progress)::-webkit-slider-runnable-track {
+    border-color: CanvasText;
+    background: linear-gradient(90deg, Highlight var(--fill), Canvas var(--fill));
+    box-shadow: none;
+  }
+  :is(#progress, #volume, #immersive-progress)::-webkit-slider-thumb {
+    border-color: CanvasText;
+    background: Highlight;
+    box-shadow: none;
+  }
+  :is(#progress, #volume, #immersive-progress)::-moz-range-thumb {
+    border-color: CanvasText;
+    background: Highlight;
+    box-shadow: none;
+  }
+  :is(#progress, #volume, #immersive-progress)::-moz-range-track {
+    border-color: CanvasText;
+    background: Canvas;
+    box-shadow: none;
+  }
+  :is(#progress, #volume, #immersive-progress)::-moz-range-progress {
+    background: Highlight;
+    box-shadow: none;
+  }
 }
 .queue-panel.liquid-glass {
   border-radius: 28px;
